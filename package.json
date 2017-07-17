@@ -1,0 +1,26 @@
+{
+  "name": "schedulerBot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jenshnck/schedulerBot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jenshnck/schedulerBot/issues"
+  },
+  "homepage": "https://github.com/jenshnck/schedulerBot#readme",
+  "dependencies": {
+    "@slack/client": "^3.10.0",
+    "@slack/events-api": "^1.0.1",
+    "express": "^4.15.3",
+    "express-validator": "^3.2.1"
+  }
+}
