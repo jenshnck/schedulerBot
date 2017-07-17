@@ -27,10 +27,54 @@ var app = express();
 var google = require('googleapis');
 var OAuth2 = google.auth.OAuth2;
 
+
+app.get('/oauthcallback', function(req, res){
+  var code = req.query.code;
+  res.send('req.query.code: ' + req.query.code);
+
+  oauth2Client.getToken(code, function (err, tokens) {
+    // Now tokens contains an access_token and an optional refresh_token. Save them.
+    if (!err) {
+      oauth2Client.setCredentials(tokens);
+      listEvents(oauth2Client)
+    }
+  })
+})
+
+
+function listEvents(auth) {
+  var calendar = google.calendar('v3');
+  calendar.events.list({
+    auth: auth,
+    calendarId: 'primary',
+    timeMin: (new Date()).toISOString(),
+    maxResults: 10,
+    singleEvents: true,
+    orderBy: 'startTime'
+  }, function(err, response) {
+    if (err) {
+      console.log('The API returned an error: ' + err);
+      return;
+    }
+    var events = response.items;
+    if (events.length == 0) {
+      console.log('No upcoming events found.');
+    } else {
+      console.log('Upcoming 10 events:');
+      for (var i = 0; i < events.length; i++) {
+        var event = events[i];
+        var start = event.start.dateTime || event.start.date;
+        console.log('%s - %s', start, event.summary);
+      }
+    }
+  });
+}
+
+
 var oauth2Client = new OAuth2(
   '479081305544-bql64pmv7ob5aktf7i1mocicf4vvcn4p.apps.googleusercontent.com',
   'UFB_e08W8doSnrtXlEV1_0VI',
-  'http://localhost:3000'
+  'http://localhost:3000/oauthcallback'
 );
 
 var url = oauth2Client.generateAuthUrl({
