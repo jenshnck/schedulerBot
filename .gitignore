@@ -58,3 +58,8 @@ typings/
 
 # dotenv environment variables file
 .env
+<<<<<<< HEAD
+=======
+
+env.sh
+>>>>>>> f3efdaa98727b02907bbb23cb1e39b7e91cfc014
