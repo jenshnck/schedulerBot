@@ -24,7 +24,37 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
     console.log('responnnnnnse', response)
-    if (response.type !== 'message' || response.user === 'U6A3AAM5K') return; // response.user === bot's id
+    if (response.type !== 'message' || response.user === 'U6A3AAM5K') return;
+
+    var apiAI = new Promise(function(resolve, reject) {
+        var request = app.textRequest(response.text, {
+            sessionId: '123456789',
+            resetContexts: true
+        });
+
+        request.on('response', function(response) {
+            console.log(response.result.parameters);
+            resolve(response.result.parameters)
+        });
+
+        request.on('error', function(error) {
+            console.log('error in promise reject');
+            reject(error)
+        });
+
+        request.end();
+    })
+
+    apiAI.then(function(response) {
+
+        rtm.sendMessage('What is your email?', route)
+
+        return null
+    }).catch(function(err) {
+        console.log('ERROR IN APIAI', err)
+    })
+
+
 });
 
 // you need to wait for the client to fully connect before you can send messages

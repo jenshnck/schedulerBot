@@ -1,8 +1,8 @@
 {
-  "name": "schedulerBot",
+  "name": "schedulerbot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,6 +21,9 @@
     "@slack/client": "^3.10.0",
     "@slack/events-api": "^1.0.1",
     "express": "^4.15.3",
-    "express-validator": "^3.2.1"
+    "express-validator": "^3.2.1",
+    "apiai": "^4.0.3",
+    "express": "^4.15.3",
+    "googleapis": "^20.1.0"
   }
 }
