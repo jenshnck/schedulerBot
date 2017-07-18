@@ -51,55 +51,100 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   })
 
   apiAI.then(function(response) {
-    console.log('responsseeeeeeeeeeeeeee', response);
-    var attachments = {
-      as_user: false,
-        attachments: [
-          {
-            "text": "Choose a game to play",
-            "fallback": "You are unable to choose a game",
-            "callback_id": "wopr_game",
-            "color": "#3AA3E3",
-            "attachment_type": "default",
-            "actions": [
-                {
-                    "name": "game",
-                    "text": "Chess",
-                    "type": "button",
-                    "value": "chess"
-                },
-                {
-                    "name": "game",
-                    "text": "Falken's Maze",
-                    "type": "button",
-                    "value": "maze"
-                },
-                {
-                    "name": "game",
-                    "text": "Thermonuclear War",
-                    "style": "danger",
-                    "type": "button",
-                    "value": "war",
-                    "confirm": {
-                        "title": "Are you sure?",
-                        "text": "Wouldn't you prefer a good game of chess?",
-                        "ok_text": "Yes",
-                        "dismiss_text": "No"
-                    }
-                }
-            ]
-        }
-        ]
-      };
-    web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
-      if (err) {
-        console.log('Error:', err);
-      } else {
-        console.log('Message sent: ', res);
-      }
-    });
+    if(response.reminder){
+      console.log('responsseeeeeeeeeeeeeee', response);
+      var attachments = {
+        as_user: false,
+          attachments: [
+            {
+              "fallback": "You are unable to complete the request",
+              "callback_id": "wopr_game",
+              "color": "#3AA3E3",
+              "attachment_type": "default",
+              "actions": [
+                  {
+                      "name": "confirm",
+                      "text": "Confirm",
+                      "style": "success",
+                      "type": "button",
+                      "value": "war",
+                  },
+                  {
+                      "name": "cancel",
+                      "text": "Cancel",
+                      "style": "danger",
+                      "type": "button",
+                      "value": "war",
+                      "confirm": {
+                          "title": "Are you sure?",
+                          "text": "Wouldn't you prefer a good game of chess?",
+                          "ok_text": "Yes",
+                          "dismiss_text": "No"
+                      }
+                  },
 
-    return null
+              ]
+          }
+          ]
+        };
+
+      web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+        if (err) {
+          console.log('Error:', err);
+        } else {
+          console.log('Message sent: ', res);
+        }
+      });
+
+      return null
+
+    }else{
+      console.log('meeeeetinnnnng', response);
+      var attachments = {
+        as_user: false,
+          attachments: [
+            {
+              "fallback": "You are unable to complete the request",
+              "callback_id": "wopr_game",
+              "color": "#3AA3E3",
+              "attachment_type": "default",
+              "actions": [
+                  {
+                      "name": "confirm",
+                      "text": "Confirm",
+                      "style": "success",
+                      "type": "button",
+                      "value": "war",
+                  },
+                  {
+                      "name": "cancel",
+                      "text": "Cancel",
+                      "style": "danger",
+                      "type": "button",
+                      "value": "war",
+                      "confirm": {
+                          "title": "Are you sure?",
+                          "text": "Wouldn't you prefer a good game of chess?",
+                          "ok_text": "Yes",
+                          "dismiss_text": "No"
+                      }
+                  },
+
+              ]
+          }
+          ]
+        };
+      web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+        if (err) {
+          console.log('Error:', err);
+        } else {
+          console.log('Message sent: ', res);
+        }
+      });
+
+      return null
+
+    }
   }).catch(function(err) {
     console.log('ERROR IN APIAI', err)
   })
