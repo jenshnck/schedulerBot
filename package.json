@@ -22,10 +22,17 @@
     "@slack/client": "^3.10.0",
     "@slack/events-api": "^1.0.1",
     "apiai": "^4.0.3",
+<<<<<<< HEAD
     "body-parser": "^1.17.2",
     "express": "^4.15.3",
     "express-validator": "^3.2.1",
     "googleapis": "^20.1.0",
     "nodemon": "^1.11.0"
+=======
+    "axios": "^0.16.2",
+    "express": "^4.15.3",
+    "express-validator": "^3.2.1",
+    "googleapis": "^20.1.0"
+>>>>>>> master
   }
 }
