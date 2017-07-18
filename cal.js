@@ -32,10 +32,16 @@ var oauth2Client = new OAuth2(
 );
 
 //TODO: Remove at end, this route is for testing
-app.get('/', function(req, res){
-  console.log(slackToCal);
-  res.send(oauth2Client);
+app.post('/spikeLu', function(req, res){
+  res.redirect('/');
+  console.log('REQ', req);
+  res.send(req);
 });
+
+app.get('/', function(req, res){
+  console.log('Got it!');
+  res.send('Gotchu, spike')
+})
 
 app.get('/test', function(req, res){
   slackRequest(req.query.slackId);
