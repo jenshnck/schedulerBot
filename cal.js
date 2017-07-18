@@ -31,6 +31,17 @@ var oauth2Client = new OAuth2(
   'http://localhost:3000/oauthcallback'
 );
 
+//TODO: Remove at end, this route is for testing
+app.get('/', function(req, res){
+  console.log(slackToCal);
+  res.send(oauth2Client);
+});
+
+app.get('/test', function(req, res){
+  slackRequest(req.query.slackId);
+  res.send('Check the log')
+});
+
 // This route is only run at the beginning of a user's messages
 // with the bot in order to authenticate them. It also runs if they
 // are not authenticated and try to send an edit to their calendar
@@ -61,29 +72,78 @@ app.get('/oauthcallback', function(req, res){
   }
 })
 
-
-//TODO: implement based on incoming data
-function createMeeting(slackId, data){
+function slackRequest(slackId, data){
   var tokens = slackToCal[slackId];
+
   if(tokens){
     oauth2Client.setCredentials(tokens);
-    // create the event based on data
-    // POST https://www.googleapis.com/calendar/v3/calendars/primary/events
-  } else {
-    // auth
+    // if this field is populated, it is a meeting
+    //TODO: test create meeting
+    /*
+      date: ‘2017-07-22’,
+      invitees: [],
+      meeting: ‘’,
+      purpose: ‘to call Simon’,
+      reminder: ‘remind’,
+      time: ‘’
+    */
+
+
+    createReminder({
+                    date: "2017-07-19",
+                    purpose: "testing 123",
+
+                  });
   }
+  //  if(data.meeting){
+  //     createMeeting(data)
+  //   }
+  //   // otherwise, it's a reminder
+  //   else {
+  //
+  //   }
+  // } else {
+  //   // auth if no token can be found
+  // }
 }
 
 //TODO: implement based on incoming data
-function createReminder(slackId, data){
-  var tokens = slackToCal[slackId];
-  if(tokens){
-    oauth2Client.setCredentials(tokens);
-    // create the event based on data
-    // POST https://www.googleapis.com/calendar/v3/calendars/primary/events
-  } else {
-    // auth
-  }
+function createMeeting(data){
+
+}
+
+//TODO: implement based on incoming data
+function createReminder(data){
+  // sample code: https://developers.google.com/google-apps/calendar/v3/reference/events/insert
+  // POST https://www.googleapis.com/calendar/v3/calendars/primary/events
+  // create the event based on data
+
+  var event = {
+    'summary': data.purpose,
+    'start': {
+      'date': data.date
+    },
+    'end': {
+      'date': data.date
+    },
+    'attendees': [
+      {'email': 'lpage@example.com'},
+      {'email': 'sbrin@example.com'},
+    ],
+  };
+
+  // Actually insert the event into the calendar
+  calendar.events.insert({
+    auth: oauth2Client,
+    calendarId: 'primary',
+    resource: event,
+  }, function(err, event) {
+    if (err) {
+      console.log('There was an error contacting the Calendar service: ' + err);
+      return;
+    }
+    console.log('Event created: %s', event.htmlLink);
+  });
 }
 
 app.listen(3000, function(){
