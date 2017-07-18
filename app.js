@@ -27,20 +27,66 @@ var app = express();
 var google = require('googleapis');
 var OAuth2 = google.auth.OAuth2;
 
+var users={};
+
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+
+app.get('/auth', function(req, res) {
+  console.log(req.query);
+
+  var oauth2Client = new OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET, 
+    'http://localhost:3000/oauthcallback'
+);
+  
+  var url = oauth2Client.generateAuthUrl({
+    // 'online' (default) or 'offline' (gets refresh_token)
+    access_type: 'offline',
+    // If you only need one scope you can pass it as a string
+    scope: 'https://www.googleapis.com/auth/calendar',
+    // Optional property that passes state parameters to redirect URI
+    state: encodeURIComponent(JSON.stringify(
+      {slackId: req.query.id})
+    )  
+  })
+  res.redirect(url)
+})
 
 app.get('/oauthcallback', function(req, res){
+  console.log('Made it here')
   var code = req.query.code;
-  res.send('req.query.code: ' + req.query.code);
+
+  var oauth2Client = new OAuth2(
+    rocess.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET, 
+    'http://localhost:3000/oauthcallback'
+  );
+
+  res.send('Congrats, you`ve given the app permission. Your code is: ',  req.query.code);
 
   oauth2Client.getToken(code, function (err, tokens) {
     // Now tokens contains an access_token and an optional refresh_token. Save them.
     if (!err) {
+      console.log('tokens = ', tokens);
       oauth2Client.setCredentials(tokens);
-      listEvents(oauth2Client)
+      users[req.body.slackId] = tokens.auth_token;
+      console.log(users)
     }
   })
 })
 
+app.post('/message', function(req, res) {
+  var tokens = users[slackId]; 
+  if (tokens) {
+    // send the message to ai.api
+  } else {
+    res.redirect('/a')
+  }
+})
 
 function listEvents(auth) {
   var calendar = google.calendar('v3');
@@ -69,26 +115,6 @@ function listEvents(auth) {
     }
   });
 }
-
-
-var oauth2Client = new OAuth2(
-  '479081305544-bql64pmv7ob5aktf7i1mocicf4vvcn4p.apps.googleusercontent.com',
-  'UFB_e08W8doSnrtXlEV1_0VI',
-  'http://localhost:3000/oauthcallback'
-);
-
-var url = oauth2Client.generateAuthUrl({
-  // 'online' (default) or 'offline' (gets refresh_token)
-  access_type: 'offline',
-
-  // If you only need one scope you can pass it as a string
-  scope: 'https://www.googleapis.com/auth/calendar',
-
-  // Optional property that passes state parameters to redirect URI
-  // state: { foo: 'bar' }
-});
-
-console.log(url);
 
 app.listen(3000, function(){
   console.log('App listening on port 3000!');
