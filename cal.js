@@ -19,10 +19,6 @@ var google = require('googleapis');
 var OAuth2 = google.auth.OAuth2;
 var calendar = google.calendar('v3');
 
-// This is a mapping from incoming slackIds to outgoing
-// GCal access tokens. The pairing is made upon authorization
-// and the token is used every time a request to change the
-// user's calendar is made.
 mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', function(){
   console.log('Connected to Mongo');
 })
@@ -32,58 +28,71 @@ mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', 
 const CLIENT_ID = '479081305544-bql64pmv7ob5aktf7i1mocicf4vvcn4p.apps.googleusercontent.com'
 const CLIENT_SECRET = 'UFB_e08W8doSnrtXlEV1_0VI'
 
-var oauth2Client = new OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET,
-  'http://localhost:3000/oauthcallback'
-);
-
-//TODO: Remove at end, this route is for testing
+// Incoming route for all slack messages
 app.post('/slack/actions', (req, res) =>{
-    res.status(200).end() // best practice to respond with 200 status
-    var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
-    console.log(actionJSONPayload);
-    var message = {
-        "text": actionJSONPayload.user.name+" clicked: "+actionJSONPayload.actions[0].name,
-        "replace_original": false
+  res.status(200).end() // best practice to respond with 200 status
+  var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
+  var message = {
+      "text": actionJSONPayload.user.name+" clicked: "+actionJSONPayload.actions[0].name,
+      "replace_original": false
+  }
+
+  var payload = req.body.payload.actions[0].value;
+
+  var oauth2Client = new OAuth2(
+    CLIENT_ID,
+    CLIENT_SECRET,
+    'http://localhost:3000/oauthcallback'
+  );
+  Token.findOne({slackId: payload.slackId}, function(err, token){
+    if(err || !token){
+      console.log('Could not find token with slackId ' + payload.slackId);
+      // if you cannot find the token in the database with the given
+      // slack Id, then you know they are a new user and can proceed
+      // with authentication
+      var url = oauth2Client.generateAuthUrl({
+        access_type: 'online',
+        scope: 'https://www.googleapis.com/auth/calendar',
+        state: payload
+      });
+      res.redirect(url)
+    } else {
+      // otherwise, just set the credentials to the token we already found
+      // and let the user know that they are already authenticated
+      oauth2Client.setCredentials(token.tokens);
+      res.send('already authenticated! You\'re good to go')
     }
-    // sendMessageToSlackResponseURL(actionJSONPayload.response_url, message)
+  })
 })
 
 app.get('/test', function(req, res){
-  slackRequest(req.query.slackId);
-  res.send('Check the log')
-});
-
-// This route is only run at the beginning of a user's messages
-// with the bot in order to authenticate them. It also runs if they
-// are not authenticated and try to send an edit to their calendar
-app.get('/authUser', function(req, res){
-  // Token.find({'slackId': req.query.slackId}, function(err, token){
-  //   if(err || !token){
-  //     console.log('Could not find token with slackId ' + req.query.slackId);
-  //     // if you cannot find the token in the database with the given
-  //     // slack Id, then you know they are a new user and can proceed
-  //     // with authentication
-  //     var url = oauth2Client.generateAuthUrl({
-  //       access_type: 'online',
-  //       scope: 'https://www.googleapis.com/auth/calendar',
-  //       state: req.query.slackId
-  //     });
-  //     res.redirect(url)
-  //   } else {
-  //     // otherwise, just set the credentials to the token we already found
-  //     // and let the user know that they are already authenticated
-  //     oauth2Client.setCredentials(token.tokens);
-  //     res.send('already authenticated! You\'re good to go')
-  //   }
-  // })
-  var url = oauth2Client.generateAuthUrl({
-    access_type: 'online',
-    scope: 'https://www.googleapis.com/auth/calendar',
-    state: req.query.slackId
-  });
-  res.redirect(url)
+  var payload = JSON.parse('{"slackId":"1","people":["Otto","Maria"],"meeting":"meeting","purpose":"discuss potatos","time":"23:45:00","date":"2017-07-21"}');
+  console.log(payload.meeting);
+  var oauth2Client = new OAuth2(
+    CLIENT_ID,
+    CLIENT_SECRET,
+    'http://localhost:3000/oauthcallback'
+  );
+  Token.findOne({slackId: payload.slackId}, function(err, token){
+    if(err || !token){
+      // if you cannot find the token in the database with the given
+      // slack Id, then you know they are a new user and can proceed
+      // with authentication
+      var url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        prompt: 'consent',
+        scope: 'https://www.googleapis.com/auth/calendar',
+        state: payload.slackId
+      });
+      res.redirect(url)
+    } else {
+      // otherwise, just set the credentials to the token we already found
+      // and let the user know that they are already authenticated
+      oauth2Client.setCredentials(token.tokens);
+      slackRequest(oauth2Client, payload);
+      res.send('already authenticated! You\'re good to go')
+    }
+  })
 })
 
 // This runs when the user accepts or denies access to their
@@ -117,69 +126,20 @@ app.get('/oauthcallback', function(req, res){
   }
 })
 
-function slackRequest(slackId, data){
-  var tokens = slackToCal[slackId];
-
-  if(tokens){
-    oauth2Client.setCredentials(tokens);
-    // if this field is populated, it is a meeting
-    //TODO: test create meeting
-    /*
-      date: ‘2017-07-22’,
-      invitees: [],
-      meeting: ‘’,
-      purpose: ‘to call Simon’,
-      reminder: ‘remind’,
-      time: ‘’
-    */
-
-
-    createReminder({
-                    date: "2017-07-19",
-                    purpose: "testing 123",
-
-                  });
+// This is
+function slackRequest(googleClient, data){
+  var event = null;
+  if(data.meeting){
+    event = createMeeting(data)
   }
-  //  if(data.meeting){
-  //     createMeeting(data)
-  //   }
-  //   // otherwise, it's a reminder
-  //   else {
-  //
-  //   }
-  // } else {
-  //   // auth if no token can be found
-  // }
-}
-
-//TODO: implement based on incoming data
-function createMeeting(data){
-
-}
-
-//TODO: implement based on incoming data
-function createReminder(data){
-  // sample code: https://developers.google.com/google-apps/calendar/v3/reference/events/insert
-  // POST https://www.googleapis.com/calendar/v3/calendars/primary/events
-  // create the event based on data
-
-  var event = {
-    'summary': data.purpose,
-    'start': {
-      'date': data.date
-    },
-    'end': {
-      'date': data.date
-    },
-    'attendees': [
-      {'email': 'lpage@example.com'},
-      {'email': 'sbrin@example.com'},
-    ],
-  };
+  // otherwise, it's a reminder
+  else {
+    event = createReminder(data)
+  }
 
   // Actually insert the event into the calendar
   calendar.events.insert({
-    auth: oauth2Client,
+    auth: googleClient,
     calendarId: 'primary',
     resource: event,
   }, function(err, event) {
@@ -191,6 +151,60 @@ function createReminder(data){
   });
 }
 
-app.listen(3000, function(){
-  console.log('App listening on port 3000!');
+/*
+  {
+    "people":["Otto","Maria"],
+    "purpose":"discuss potatos",
+    "time":"02:00:00",
+    "date":"2017-07-21"
+  }
+*/
+
+
+function createMeeting(data){
+  // calculate end dateTime
+  var arr = data.time.split(':');
+  var endTime, endDate;
+  if (parseInt(arr[0]) === 23) {
+    endTime = ['00', arr[1], arr[2]].join(':');
+    var arr2 = data.date.split('-');
+    endDate = [arr2[0], arr2[1], parseInt(arr2[2])+1].join('-');
+  } else {
+    endTime = [parseInt(arr[0])+1, arr[1], arr[2]].join(':');
+    endDate = data.date;
+  }
+
+  // Make event
+  var event = {
+    'summary': data.purpose,
+    'start': {
+      'dateTime': data.date + 'T' + data.time,
+      'timeZone': 'America/Los_Angeles'
+    },
+    'end': {
+      'dateTime': endDate + 'T' + endTime,
+      'timeZone': 'America/Los_Angeles'
+    },
+    'attendees': data.people,
+  };
+  return event;
+}
+
+function createReminder(googleClient, data){
+  var event = {
+    'summary': data.purpose,
+    'start': {
+      'date': data.date
+    },
+    'end': {
+      'date': data.date
+    },
+    'attendees': data.people,
+  };
+  return event;
+}
+
+var PORT = 3000;
+app.listen(PORT, function(){
+  console.log('App listening on port ' + PORT);
 })
