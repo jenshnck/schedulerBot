@@ -8,6 +8,8 @@ var WebClient = require('@slack/client').WebClient;
 var token = process.env.SLACK_API_TOKEN || '';
 var web = new WebClient(token);
 
+var dateFormat = require('dateformat');
+
 console.log('@slack/client', require('@slack/client'));
 
 var bot_token = process.env.SLACK_BOT_TOKEN;
@@ -27,7 +29,7 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 });
 
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
-  if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id ==='B69ACNA4Q') return;
+  if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6B8DVDJA') return;
 
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
@@ -51,7 +53,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   apiAI.then(function(response) {
     console.log('responsseeeeeeeeeeeeeee', response);
     var attachments = {
-      as_user: true,
+      as_user: false,
         attachments: [
           {
             "text": "Choose a game to play",
@@ -89,8 +91,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         }
         ]
       };
-
-    web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + response.date, attachments, function(err, res) {
+    web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
       if (err) {
         console.log('Error:', err);
       } else {
