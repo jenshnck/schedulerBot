@@ -1,0 +1,2 @@
+export SLACK_BOT_TOKEN='xoxb-214112361189-NnczcbVMp0EzsSK63lwHKsxq';
+export APIAI_CLI='bd22004466ce479f84dacc444850da09';
