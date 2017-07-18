@@ -6,13 +6,14 @@ var app = apiai(process.env.APIAI_CLI);
 
 var WebClient = require('@slack/client').WebClient;
 var token = process.env.SLACK_API_TOKEN || '';
-var web = new WebClient(token);
+var bot_token = process.env.SLACK_BOT_TOKEN;
+
+var web = new WebClient(bot_token);
 
 var dateFormat = require('dateformat');
 
 console.log('@slack/client', require('@slack/client'));
 
-var bot_token = process.env.SLACK_BOT_TOKEN;
 
 var rtm = new RtmClient(bot_token);
 
@@ -29,7 +30,7 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 });
 
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
-  if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6B8DVDJA') return;
+  if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6BA113U6') return;
 
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
@@ -52,41 +53,44 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
 
   apiAI.then(function(response) {
     if(response.reminder){
-      console.log('responsseeeeeeeeeeeeeee', response);
       var attachments = {
-        as_user: false,
-          attachments: [
-            {
-              "fallback": "You are unable to complete the request",
-              "callback_id": "wopr_game",
-              "color": "#3AA3E3",
-              "attachment_type": "default",
-              "actions": [
-                  {
-                      "name": "confirm",
-                      "text": "Confirm",
-                      "style": "success",
-                      "type": "button",
-                      "value": "war",
-                  },
-                  {
-                      "name": "cancel",
-                      "text": "Cancel",
-                      "style": "danger",
-                      "type": "button",
-                      "value": "war",
-                      "confirm": {
-                          "title": "Are you sure?",
-                          "text": "Wouldn't you prefer a good game of chess?",
-                          "ok_text": "Yes",
-                          "dismiss_text": "No"
-                      }
-                  },
+        as_user: true,
+        attachments: [
+          {
+            "fallback": "You are unable to complete the request",
+            "callback_id": "wopr_game",
+            "color": "#3AA3E3",
+            "attachment_type": "default",
+            "actions": [
+              {
+                "name": "confirm",
+                "text": "Confirm",
+                "style": "success",
+                "type": "button",
+                "value": JSON.stringify({
+                  "reminder": response.reminder,
+                  "purpose": response.purpose,
+                  "date": response.date,
+                }),
+              },
+              {
+                "name": "cancel",
+                "text": "Cancel",
+                "style": "danger",
+                "type": "button",
+                "value": "war",
+                "confirm": {
+                  "title": "Are you sure?",
+                  "text": "Wouldn't you prefer a good game of chess?",
+                  "ok_text": "Yes",
+                  "dismiss_text": "No"
+                }
+              },
 
-              ]
+            ]
           }
-          ]
-        };
+        ]
+      };
 
       web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
@@ -101,40 +105,107 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
     }else{
       console.log('meeeeetinnnnng', response);
       var attachments = {
-        as_user: false,
-          attachments: [
-            {
-              "fallback": "You are unable to complete the request",
-              "callback_id": "wopr_game",
-              "color": "#3AA3E3",
-              "attachment_type": "default",
-              "actions": [
-                  {
-                      "name": "confirm",
-                      "text": "Confirm",
-                      "style": "success",
-                      "type": "button",
-                      "value": "war",
-                  },
-                  {
-                      "name": "cancel",
-                      "text": "Cancel",
-                      "style": "danger",
-                      "type": "button",
-                      "value": "war",
-                      "confirm": {
-                          "title": "Are you sure?",
-                          "text": "Wouldn't you prefer a good game of chess?",
-                          "ok_text": "Yes",
-                          "dismiss_text": "No"
-                      }
-                  },
+        as_user: true,
+        attachments: [
+          {
+            "fallback": "You are unable to complete the request",
+            "callback_id": "wopr_game",
+            "color": "#3AA3E3",
+            "attachment_type": "default",
+            "actions": [
+              {
+                "name": "confirm",
+                "text": "Confirm",
+                "style": "success",
+                "type": "button",
+                "value": JSON.stringify({
+                  "people": response['given-name'],
+                  "meeting": response.meeting,
+                  "purpose": response.purpose,
+                  "time": response.time,
+                  "date": response.date,
+                }),
+              },
+              {
+                "name": "cancel",
+                "text": "Cancel",
+                "style": "danger",
+                "type": "button",
+                "value": "war",
+                "confirm": {
+                  "title": "Are you sure?",
+                  "text": "Do you want to cancel the meeting?",
+                  "ok_text": "Yes",
+                  "dismiss_text": "No"
+                }
+              },
 
-              ]
+            ]
           }
-          ]
-        };
+        ]
+      };
+
       web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+        if (err) {
+          console.log('Error:', err);
+        } else {
+          console.log('Message sent: ', res);
+        }
+      });
+
+      var attachments1 = {
+        as_user: true,
+        "text": "Would you like to play a game?",
+        "response_type": "in_channel",
+        "attachments": [
+          {
+            "text": "Choose a game to play",
+            "fallback": "If you could read this message, you'd be choosing something fun to do right now.",
+            "color": "#3AA3E3",
+            "attachment_type": "default",
+            "callback_id": "game_selection",
+            "actions": [
+              {
+                "name": "games_list",
+                "text": "Pick a game...",
+                "type": "select",
+                "options": [
+                  {
+                    "text": "Hearts",
+                    "value": "hearts"
+                  },
+                  {
+                    "text": "Bridge",
+                    "value": "bridge"
+                  },
+                  {
+                    "text": "Checkers",
+                    "value": "checkers"
+                  },
+                  {
+                    "text": "Chess",
+                    "value": "chess"
+                  },
+                  {
+                    "text": "Poker",
+                    "value": "poker"
+                  },
+                  {
+                    "text": "Falken's Maze",
+                    "value": "maze"
+                  },
+                  {
+                    "text": "Global Thermonuclear War",
+                    "value": "war"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+
+      web.chat.postMessage(route, "Unfortunately, that time won't work. Here are some available times.", attachments1, function(err, res) {
         if (err) {
           console.log('Error:', err);
         } else {

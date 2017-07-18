@@ -17,6 +17,10 @@ var google = require('googleapis');
 var OAuth2 = google.auth.OAuth2;
 var calendar = google.calendar('v3');
 
+var WebClient = require('@slack/client').WebClient;
+var bot_token = process.env.SLACK_BOT_TOKEN;
+var web = new WebClient(bot_token);
+
 // This is a mapping from incoming slackIds to outgoing
 // GCal access tokens. The pairing is made upon authorization
 // and the token is used every time a request to change the
@@ -32,11 +36,30 @@ var oauth2Client = new OAuth2(
 );
 
 //TODO: Remove at end, this route is for testing
-app.post('/spikeLu', function(req, res){
-  res.redirect('/');
-  console.log('REQ', req);
-  res.send(req);
-});
+
+app.post('/slack/actions', (req, res) =>{
+    // res.status(200).end() // best practice to respond with 200 status
+    var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
+    var attachments = {
+      as_user: true,
+      };
+
+      if(actionJSONPayload.actions[0].name === 'confirm'){
+        res.status(200).send({
+          replace_original: true,
+          text: 'Your meeting has been created!'
+        })
+      }else if(actionJSONPayload.actions[0].name === 'cancel'){
+        res.status(200).send({
+          replace_original: true,
+          text: 'You have cancelled!'
+        })
+      }
+      res.status(200).send({
+        replace_original: true,
+        text: 'Your meeting has been created!'
+      });
+})
 
 app.get('/', function(req, res){
   console.log('Got it!');
