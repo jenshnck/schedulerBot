@@ -5,7 +5,8 @@ var app = apiai(process.env.APIAI_CLI);
 
 var hi = null
 
-var request = app.textRequest('remind me to go home', {
+//text request to bot with first messagr
+var request = app.textRequest('remind me to go home saturday', {
 sessionId: "123456789",
 resetContexts: true,
 });
@@ -25,7 +26,9 @@ request.on('error', function(error) {
 
 request.end();
 });
+//act upon first promise
 myFirstPromise.then((response)=>{
+// use initial response from api.ai as new input for scheduler bot
 var request2 = app.textRequest(response, {
 sessionId: "123456789",
 });
