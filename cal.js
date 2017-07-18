@@ -6,6 +6,8 @@
     https://github.com/google/google-api-nodejs-client#retrieve-authorization-code
 */
 
+var mongoose = require('mongoose');
+var {Token} = require('./models.js')
 var express = require('express');
 var app = express();
 
@@ -21,26 +23,31 @@ var calendar = google.calendar('v3');
 // GCal access tokens. The pairing is made upon authorization
 // and the token is used every time a request to change the
 // user's calendar is made.
-var slackToCal = {/*slackId (as a string): access_token*/};
+mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', function(){
+  console.log('Connected to Mongo');
+})
 
 // create an oauth2client that runs based on the google calendar
 // api I requested
+const CLIENT_ID = '479081305544-bql64pmv7ob5aktf7i1mocicf4vvcn4p.apps.googleusercontent.com'
+const CLIENT_SECRET = 'UFB_e08W8doSnrtXlEV1_0VI'
+
 var oauth2Client = new OAuth2(
-  '479081305544-bql64pmv7ob5aktf7i1mocicf4vvcn4p.apps.googleusercontent.com',
-  'UFB_e08W8doSnrtXlEV1_0VI',
+  CLIENT_ID,
+  CLIENT_SECRET,
   'http://localhost:3000/oauthcallback'
 );
 
 //TODO: Remove at end, this route is for testing
-app.post('/spikeLu', function(req, res){
-  res.redirect('/');
-  console.log('REQ', req);
-  res.send(req);
-});
-
-app.get('/', function(req, res){
-  console.log('Got it!');
-  res.send('Gotchu, spike')
+app.post('/slack/actions', (req, res) =>{
+    res.status(200).end() // best practice to respond with 200 status
+    var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
+    console.log(actionJSONPayload);
+    var message = {
+        "text": actionJSONPayload.user.name+" clicked: "+actionJSONPayload.actions[0].name,
+        "replace_original": false
+    }
+    // sendMessageToSlackResponseURL(actionJSONPayload.response_url, message)
 })
 
 app.get('/test', function(req, res){
@@ -52,6 +59,25 @@ app.get('/test', function(req, res){
 // with the bot in order to authenticate them. It also runs if they
 // are not authenticated and try to send an edit to their calendar
 app.get('/authUser', function(req, res){
+  // Token.find({'slackId': req.query.slackId}, function(err, token){
+  //   if(err || !token){
+  //     console.log('Could not find token with slackId ' + req.query.slackId);
+  //     // if you cannot find the token in the database with the given
+  //     // slack Id, then you know they are a new user and can proceed
+  //     // with authentication
+  //     var url = oauth2Client.generateAuthUrl({
+  //       access_type: 'online',
+  //       scope: 'https://www.googleapis.com/auth/calendar',
+  //       state: req.query.slackId
+  //     });
+  //     res.redirect(url)
+  //   } else {
+  //     // otherwise, just set the credentials to the token we already found
+  //     // and let the user know that they are already authenticated
+  //     oauth2Client.setCredentials(token.tokens);
+  //     res.send('already authenticated! You\'re good to go')
+  //   }
+  // })
   var url = oauth2Client.generateAuthUrl({
     access_type: 'online',
     scope: 'https://www.googleapis.com/auth/calendar',
@@ -68,8 +94,21 @@ app.get('/oauthcallback', function(req, res){
   } else {
     oauth2Client.getToken(req.query.code, function (err, tokens) {
       if (!err) {
-        // update slackId to Calendar tokens mapping
-        slackToCal[req.query.state] = tokens;
+        // create a new token object with the slackId and the auth tokens
+        var tkn = new Token({
+          slackId: req.query.state,
+          tokens: tokens
+        });
+
+        // save the new token obejct to mongo
+        tkn.save(function(err, token){
+          if(err){
+            console.log('Error saving new token', err);
+          } else {
+            console.log('successfully saved new user!');
+          }
+        })
+
         // set the current credentials to the person who just authenticated
         oauth2Client.setCredentials(tokens);
       }
