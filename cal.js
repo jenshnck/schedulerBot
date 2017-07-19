@@ -161,7 +161,7 @@ app.get('/oauthcallback', function(req, res){
 })
 
 // This is
-function slackRequest(googleClient, data){
+function slackRequest(googleClient, data) {
   var event = null;
   if(data.meeting){
     event = createMeeting(data)
