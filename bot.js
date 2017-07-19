@@ -5,7 +5,7 @@ var apiai = require('apiai');
 var app = apiai(process.env.APIAI_CLI);
 
 var WebClient = require('@slack/client').WebClient;
-var token = process.env.SLACK_API_TOKEN || '';
+// var token = process.env.SLACK_API_TOKEN || '';
 var bot_token = process.env.SLACK_BOT_TOKEN;
 
 var web = new WebClient(bot_token);
