@@ -41,7 +41,7 @@ app.get('/auth', function(req, res) {
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET, 
     'http://localhost:3000/oauthcallback'
-);
+  );
   
   var url = oauth2Client.generateAuthUrl({
     // 'online' (default) or 'offline' (gets refresh_token)
@@ -73,48 +73,18 @@ app.get('/oauthcallback', function(req, res){
     if (!err) {
       console.log('tokens = ', tokens);
       oauth2Client.setCredentials(tokens);
-      users[req.body.slackId] = tokens.auth_token;
-      console.log(users)
+      users[req.body.user.id] = tokens.auth_token;
+      console.log(users); 
+
+    } else {
+      console.log('Error = ', err); 
     }
   })
 })
 
 app.post('/message', function(req, res) {
-  var tokens = users[slackId]; 
-  if (tokens) {
-    // send the message to ai.api
-  } else {
-    res.redirect('/a')
-  }
+  
 })
-
-function listEvents(auth) {
-  var calendar = google.calendar('v3');
-  calendar.events.list({
-    auth: auth,
-    calendarId: 'primary',
-    timeMin: (new Date()).toISOString(),
-    maxResults: 10,
-    singleEvents: true,
-    orderBy: 'startTime'
-  }, function(err, response) {
-    if (err) {
-      console.log('The API returned an error: ' + err);
-      return;
-    }
-    var events = response.items;
-    if (events.length == 0) {
-      console.log('No upcoming events found.');
-    } else {
-      console.log('Upcoming 10 events:');
-      for (var i = 0; i < events.length; i++) {
-        var event = events[i];
-        var start = event.start.dateTime || event.start.date;
-        console.log('%s - %s', start, event.summary);
-      }
-    }
-  });
-}
 
 app.listen(3000, function(){
   console.log('App listening on port 3000!');

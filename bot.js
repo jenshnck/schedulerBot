@@ -17,7 +17,6 @@ var rtm = new RtmClient(bot_token);
 var route;
 var userIDObj = {};
 
-
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
   for (const c of rtmStartData.channels) {
     console.log(c);
@@ -90,7 +89,8 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         ]
       };
 
-    web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + response.date, attachments, function(err, res) {
+      // At this point, we have two responses. One for the entire containing function and one for API.then. I think that this is a problem. Which response are you referring to? 
+    web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + response.date, attachments, function(err, res) {
       if (err) {
         console.log('Error:', err);
       } else {
@@ -99,9 +99,10 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
     });
 
     return null
-  }).catch(function(err) {
-    console.log('ERROR IN APIAI', err)
   })
+    .catch(function(err) {
+      console.log('ERROR IN APIAI', err)
+    })
 
 
 });
