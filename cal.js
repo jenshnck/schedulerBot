@@ -71,7 +71,7 @@ app.post('/slack/actions', (req, res) =>{
       var url = oauth2Client.generateAuthUrl({
         access_type: 'online',
         scope: 'https://www.googleapis.com/auth/calendar',
-        state: payload
+        state: payload.slackId
       });
       res.send(url)
     } else {
@@ -163,7 +163,7 @@ app.get('/oauthcallback', function(req, res){
 })
 
 // This is
-function slackRequest(googleClient, data){
+function slackRequest(googleClient, data) {
   var event = null;
   if(data.meeting){
     event = createMeeting(data)
