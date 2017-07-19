@@ -71,13 +71,14 @@ app.post('/slack/actions', (req, res) =>{
       var url = oauth2Client.generateAuthUrl({
         access_type: 'online',
         scope: 'https://www.googleapis.com/auth/calendar',
-        state: payload
+        state: payload.slackId
       });
       res.send(url)
     } else {
       // otherwise, just set the credentials to the token we already found
       // and let the user know that they are already authenticated
       oauth2Client.setCredentials(token.tokens);
+      slackRequest(oauth2Client, payload);
       res.send('already authenticated! You\'re good to go')
     }
   })
@@ -137,6 +138,11 @@ app.get('/oauthcallback', function(req, res){
   if(req.query.error){
     res.send('You have denied access to your google calendar');
   } else {
+    var oauth2Client = new OAuth2(
+      CLIENT_ID,
+      CLIENT_SECRET,
+      'http://localhost:'+PORT+'/oauthcallback'
+    );
     oauth2Client.getToken(req.query.code, function (err, tokens) {
       if (!err) {
         // create a new token object with the slackId and the auth tokens
@@ -226,7 +232,7 @@ function createMeeting(data){
   return event;
 }
 
-function createReminder(googleClient, data){
+function createReminder(data){
   var event = {
     'summary': data.purpose,
     'start': {
