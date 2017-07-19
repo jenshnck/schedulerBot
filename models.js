@@ -6,6 +6,9 @@ var Token = mongoose.model('Token', {
   },
   tokens: {
     type: Object
+  }, 
+  email: {
+    type: String
   }
 })
 

@@ -1,23 +1,27 @@
-var mongoose = require('mongoose');
-var {Token} = require('./models.js')
-var express = require('express');
-var app = express();
+(function setup() {
+  var mongoose = require('mongoose');
+  var {Token} = require('./models.js')
+  var express = require('express');
+  var app = express();
 
-var bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+  var bodyParser = require('body-parser');
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(bodyParser.json());
 
-var google = require('googleapis');
-var OAuth2 = google.auth.OAuth2;
-var calendar = google.calendar('v3');
+  var google = require('googleapis');
+  var OAuth2 = google.auth.OAuth2;
+  var calendar = google.calendar('v3');
+  var plus = google.plus('v1');
 
-var WebClient = require('@slack/client').WebClient;
-var bot_token = process.env.SLACK_BOT_TOKEN;
-var web = new WebClient(bot_token);
+  var WebClient = require('@slack/client').WebClient;
+  var bot_token = process.env.SLACK_BOT_TOKEN;
+  var web = new WebClient(bot_token);
 
-mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', function(){
-  console.log('Connected to Mongo');
-})
+  mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', 
+  function() {
+    console.log('Connected to Mongo');
+  })
+}())
 
 // Incoming route for all slack messages
 app.post('/slack/actions', (req, res) => {
@@ -44,7 +48,7 @@ app.post('/slack/actions', (req, res) => {
   var oauth2Client = new OAuth2(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
-    'http://localhost:'+PORT+'/oauthcallback'
+    'http://localhost:'+process.env.PORT+'/oauthcallback'
   );
   Token.findOne({slackId: payload.slackId}, function(err, token){
     if(err || !token){
@@ -53,7 +57,10 @@ app.post('/slack/actions', (req, res) => {
       // slack Id, then you know they are a new user and can proceed with authentication
       var url = oauth2Client.generateAuthUrl({
         access_type: 'online',
-        scope: 'https://www.googleapis.com/auth/calendar',
+        scope: [
+          'https://www.googleapis.com/auth/calendar',
+          'https://www.googleapis.com/auth/plus.me'
+        ],
         state: payload.slackId
       });
       res.send(url)
@@ -61,6 +68,7 @@ app.post('/slack/actions', (req, res) => {
       // otherwise, just set the credentials to the token we already found
       // and let the user know that they are already authenticated
       oauth2Client.setCredentials(token.tokens);
+
       slackRequest(oauth2Client, payload);
       res.send('already authenticated! You\'re good to go')
     }
@@ -75,15 +83,29 @@ app.get('/oauthcallback', function(req, res) {
     var oauth2Client = new OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET, 
-      'http://localhost:3000/oauthcallback'
+      'http://localhost:'+process.env.PORT+'/oauthcallback'
     );
 
     oauth2Client.getToken(req.query.code, function (err, tokens) {
       if (!err) {
+        // set the current credentials to the person who just authenticated
+        oauth2Client.setCredentials(tokens);
+        var email = ''
+        // get the user's Google account address 
+        plus.people.get({
+          userId: 'me',
+          auth: oauth2Client, 
+          fields: emails
+          }, function (err, response) {
+            var user = JSON.parse(response)
+            email = user.value; 
+          });
+
         // create a new token object with the slackId and the auth tokens
         var tkn = new Token({
           slackId: req.query.state,
-          tokens: tokens
+          tokens: tokens, 
+          email: email
         });
 
         // save the new token obejct to mongo
@@ -94,9 +116,6 @@ app.get('/oauthcallback', function(req, res) {
             console.log('successfully saved new user!');
           }
         })
-
-        // set the current credentials to the person who just authenticated
-        oauth2Client.setCredentials(tokens);
       }
     })
   }
@@ -105,7 +124,7 @@ app.get('/oauthcallback', function(req, res) {
 // This is
 function slackRequest(googleClient, data) {
   var event = null;
-  if(data.meeting){
+  if(data.meeting) {
     event = createMeeting(data)
   }
   // otherwise, it's a reminder
@@ -117,7 +136,7 @@ function slackRequest(googleClient, data) {
   calendar.events.insert({
     auth: googleClient,
     calendarId: 'primary',
-    resource: event,
+    resource: event
   }, function(err, event) {
     if (err) {
       console.log('There was an error contacting the Calendar service: ' + err);
@@ -149,6 +168,17 @@ function createMeeting(data){
     endDate = data.date;
   }
 
+  var attendeeEmails = []
+  data.people.forEach((slackId) => {
+    Token.find({slackId: slackId }, function(err, user) {
+     if (err) {
+       console.log('Error! No user found with this email address.')
+       return; 
+     } else {
+       attendeeEmails.push({email: user.email})
+     }
+    })
+  })
   // Make event
   var event = {
     'summary': data.purpose,
@@ -160,27 +190,26 @@ function createMeeting(data){
       'dateTime': endDate + 'T' + endTime,
       'timeZone': 'America/Los_Angeles'
     },
-    'attendees': data.people,
-  };
-  return event;
+    'attendees': attendeeEmails,
+    };
+    return event;
+  }
+
+  function createReminder(data) {
+    var event = {
+      'summary': data.purpose,
+      'start': {
+        'date': data.date
+      },
+      'end': {
+        'date': data.date
+      }
+    };
+    return event;
 }
 
-function createReminder(data){
-  var event = {
-    'summary': data.purpose,
-    'start': {
-      'date': data.date
-    },
-    'end': {
-      'date': data.date
-    },
-    'attendees': data.people,
-  };
-  return event;
-}
-
-app.listen(PORT, function(){
-  console.log('App listening on port ' + PORT);
+app.listen(process.env.PORT, function(){
+  console.log('App listening on port ' + process.env.PORT);
 })
 
 /*
