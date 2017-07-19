@@ -20,10 +20,7 @@ var rtm = new RtmClient(bot_token);
 var route;
 var userIDObj = {};
 
-<<<<<<< HEAD
-=======
 //authentication for bot
->>>>>>> master
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
   for (const c of rtmStartData.channels) {
     console.log(c);
@@ -97,7 +94,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         ]
       };
 
-      web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+      web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
           console.log('Error:', err);
         } else {
@@ -150,15 +147,8 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         ]
       };
 
-<<<<<<< HEAD
-      // At this point, we have two responses. One for the entire containing function and one for API.then. I think that this is a problem. Which response are you referring to? 
-    web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + response.date, attachments, function(err, res) {
-      if (err) {
-        console.log('Error:', err);
-      } else {
-        console.log('Message sent: ', res);
-=======
-      web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+     // For the time conflicts  
+      web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
           console.log('Error:', err);
         } else {
@@ -216,12 +206,8 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
             ]
           }
         ]
->>>>>>> master
       }
 
-<<<<<<< HEAD
-    return null
-=======
       web.chat.postMessage(route, "Unfortunately, that time won't work. Here are some available times.", attachments1, function(err, res) {
         if (err) {
           console.log('Error:', err);
@@ -235,7 +221,6 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
     }
   }).catch(function(err) {
     console.log('ERROR IN APIAI', err)
->>>>>>> master
   })
     .catch(function(err) {
       console.log('ERROR IN APIAI', err)
@@ -258,6 +243,5 @@ function buildDM(idArr) {
     userIDObj[userId] = dm
   }
 }
-
 
 rtm.start();
