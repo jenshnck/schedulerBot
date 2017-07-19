@@ -28,8 +28,10 @@
     "googleapis": "^20.1.0",
     "nodemon": "^1.11.0", 
     "axios": "^0.16.2",
+    "convert-time": "^0.3.0",
     "express": "^4.15.3",
     "express-validator": "^3.2.1",
-    "googleapis": "^20.1.0"
+    "googleapis": "^20.1.0",
+    "mongoose": "^4.11.3"
   }
 }
