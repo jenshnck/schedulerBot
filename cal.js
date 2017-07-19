@@ -35,7 +35,7 @@ const CLIENT_SECRET = 'UFB_e08W8doSnrtXlEV1_0VI'
 
 // Incoming route for all slack messages
 app.post('/slack/actions', (req, res) =>{
-  res.status(200).end() // best practice to respond with 200 status
+  //res.status(200).end() // best practice to respond with 200 status
   var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
   var message = {
       "text": actionJSONPayload.user.name+" clicked: "+actionJSONPayload.actions[0].name,
@@ -46,28 +46,20 @@ app.post('/slack/actions', (req, res) =>{
   as_user: true,
   };
 
-  if(actionJSONPayload.actions[0].name === 'confirm'){
-    res.status(200).send({
-      replace_original: true,
-      text: 'Your meeting has been created!'
-    })
-  } else if(actionJSONPayload.actions[0].name === 'cancel'){
-    res.status(200).send({
-      replace_original: true,
-      text: 'You have cancelled!'
-    })
-  }
-  res.status(200).send({
-    replace_original: true,
-    text: 'Your meeting has been created!'
-  });
+  var payload = req.body.payload;
+  payload = JSON.parse(payload);
+  var slackId = payload.user.id;
+  payload = payload.actions[0].value;
+  payload = JSON.parse(payload);
 
-  var payload = req.body.payload.actions[0].value;
+  payload = Object.assign(payload, {slackId: slackId});
+  console.log('PAYLOAD');
+  console.log(payload);
 
   var oauth2Client = new OAuth2(
     CLIENT_ID,
     CLIENT_SECRET,
-    'http://localhost:3000/oauthcallback'
+    'http://localhost:3001/oauthcallback'
   );
   Token.findOne({slackId: payload.slackId}, function(err, token){
     if(err || !token){
@@ -80,7 +72,7 @@ app.post('/slack/actions', (req, res) =>{
         scope: 'https://www.googleapis.com/auth/calendar',
         state: payload
       });
-      res.redirect(url)
+      res.send(url)
     } else {
       // otherwise, just set the credentials to the token we already found
       // and let the user know that they are already authenticated
@@ -88,6 +80,24 @@ app.post('/slack/actions', (req, res) =>{
       res.send('already authenticated! You\'re good to go')
     }
   })
+
+  // if(actionJSONPayload.actions[0].name === 'confirm'){
+  //   res.status(200).send({
+  //     replace_original: true,
+  //     text: 'Your meeting has been created!'
+  //   })
+  // } else if(actionJSONPayload.actions[0].name === 'cancel'){
+  //   res.status(200).send({
+  //     replace_original: true,
+  //     text: 'You have cancelled!'
+  //   })
+  // } else {
+  //   res.status(200).send({
+  //     replace_original: true,
+  //     text: 'Your meeting has been created!'
+  //   });
+  // }
+
 })
 
 // app.get('/test', function(req, res){
@@ -229,7 +239,7 @@ function createReminder(googleClient, data){
   return event;
 }
 
-var PORT = 3000;
+var PORT = 3001;
 app.listen(PORT, function(){
   console.log('App listening on port ' + PORT);
 })
