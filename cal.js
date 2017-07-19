@@ -29,6 +29,7 @@ mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', 
 
 // create an oauth2client that runs based on the google calendar
 // api I requested
+var PORT = 3001;
 const CLIENT_ID = '479081305544-bql64pmv7ob5aktf7i1mocicf4vvcn4p.apps.googleusercontent.com'
 const CLIENT_SECRET = 'UFB_e08W8doSnrtXlEV1_0VI'
 
@@ -59,7 +60,7 @@ app.post('/slack/actions', (req, res) =>{
   var oauth2Client = new OAuth2(
     CLIENT_ID,
     CLIENT_SECRET,
-    'http://localhost:3001/oauthcallback'
+    'http://localhost:'+PORT+'/oauthcallback'
   );
   Token.findOne({slackId: payload.slackId}, function(err, token){
     if(err || !token){
@@ -239,7 +240,6 @@ function createReminder(googleClient, data){
   return event;
 }
 
-var PORT = 3001;
 app.listen(PORT, function(){
   console.log('App listening on port ' + PORT);
 })
