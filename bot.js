@@ -19,7 +19,7 @@ var rtm = new RtmClient(bot_token);
 var route;
 var userIDObj = {};
 
-
+//authentication for bot
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
   for (const c of rtmStartData.channels) {
     console.log(c);
@@ -27,16 +27,16 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
   }
   console.log(`Logged in as ${rtmStartData.self.name} of team ${rtmStartData.team.name}, but not yet connected to a channel`);
 });
-
+//receives user message
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6B8DVDJA') return;
-
+//pass response on to api.ai
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
       sessionId: '123456789',
       resetContexts: true
     });
-
+//log response
     request.on('response', function(response) {
       console.log(response.result);
       resolve(response.result.parameters)
@@ -49,7 +49,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
 
     request.end();
   })
-
+//parae api response and send interactive message to user
   apiAI.then(function(response) {
     console.log('responsseeeeeeeeeeeeeee', response);
     var attachments = {
