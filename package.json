@@ -26,6 +26,7 @@
     "express": "^4.15.3",
     "express-validator": "^3.2.1",
     "googleapis": "^20.1.0",
-    "mongoose": "^4.11.3"
+    "mongoose": "^4.11.3",
+    "string-similarity": "^1.2.0"
   }
 }

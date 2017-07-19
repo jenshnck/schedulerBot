@@ -12,6 +12,8 @@ var web = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 var dateFormat = require('dateformat');
 
+var stringSimilarity = require('string-similarity');
+
 console.log('@slack/client', require('@slack/client'));
 
 
@@ -20,10 +22,16 @@ var rtm = new RtmClient(bot_token);
 var route;
 var userIDObj = {};
 
+var users = [];
+
 //authentication for bot
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
+  console.log('rtmStartData', rtmStartData);
+  for(var i = 0; i < rtmStartData.users.length; i++){
+    users.push(rtmStartData.users[i]);
+  }
   for (const c of rtmStartData.channels) {
-    console.log(c);
+    // console.log('cccccccccccccccc', c);
     if (c.is_member && c.name ==='test') { route = c.id }
   }
   console.log(`Logged in as ${rtmStartData.self.name} of team ${rtmStartData.team.name}, but not yet connected to a channel`);
@@ -31,7 +39,6 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 //receives user message
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6BA113U6') return;
-  console.log('response............', response);
   var user = response.user;
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
@@ -104,7 +111,32 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
       return null
 
     }else{
-      console.log('meeeeetinnnnng', response);
+      var people = response['given-name'];
+      var realNames = [];
+      var matchedNames = [];
+      var matchedSlackId = [];
+      for(var i = 0; i < users.length; i++){
+        if(users[i].real_name){
+          realNames.push(users[i].real_name);  
+        }
+      }
+
+      for(var i = 0; i < people.length; i++){
+        console.log('hiiiiiiiiiii', people[i], realNames)
+          var matched = stringSimilarity.findBestMatch(people[i], realNames).bestMatch.target;
+          matchedNames.push(matched);
+      }
+
+        for(var j = 0; j < matchedNames.length; j++){
+          for(var i = 0; i < users.length; i++){
+            if(users[i].real_name === matchedNames[j]){
+              matchedSlackId.push(users[i].id);
+            }
+          }
+        }
+
+        console.log('lmaooooooooooooooooooo', matchedSlackId);
+
       var attachments = {
         as_user: true,
         attachments: [
@@ -120,7 +152,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
                 "style": "success",
                 "type": "button",
                 "value": JSON.stringify({
-                  "people": response['given-name'],
+                  "people": matchedSlackId,
                   "meeting": response.meeting,
                   "purpose": response.purpose,
                   "time": response.time,
@@ -241,8 +273,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
 
 // you need to wait for the client to fully connect before you can send messages
 rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
-  console.log('client', CLIENT_EVENTS);
-  rtm.sendMessage("*Here I am, fam!*", route);
+  // console.log('clienttttttttt', CLIENT_EVENTS);
 });
 
 function getReminders(date){
