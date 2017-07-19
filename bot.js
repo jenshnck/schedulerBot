@@ -8,7 +8,7 @@ var WebClient = require('@slack/client').WebClient;
 // var token = process.env.SLACK_API_TOKEN || '';
 var bot_token = process.env.SLACK_BOT_TOKEN;
 
-var web = new WebClient(bot_token);
+var web = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 var dateFormat = require('dateformat');
 
@@ -31,7 +31,8 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6BA113U6') return;
-
+  console.log('response............', response);
+  var user = response.user;
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
       sessionId: '123456789',
@@ -139,11 +140,12 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
                   "dismiss_text": "No"
                 }
               },
-
             ]
           }
         ]
       };
+
+
 
       web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
@@ -213,6 +215,20 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         }
       });
 
+      web = new WebClient(process.env.SLACK_API_TOKEN);
+        var reminders = getReminders(response.date);
+        for(var i = 0; i < reminders.length; i++){
+          if(reminders[i]){
+            web.reminders.add('Remember ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), reminders[i], function(err, res) {
+              if (err) {
+                console.log('Reminder Error:', err);
+              } else {
+                console.log('Message sent: ', res);
+              }
+            });
+          }
+        }
+
       return null
 
     }
@@ -229,14 +245,30 @@ rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
   rtm.sendMessage("*Here I am, fam!*", route);
 });
 
-
-function buildDM(idArr) {
-  for (var i=0; i < idArr.length; i++) {
-    var dm = idArr[i].id;
-    var userId = idArr[i].user;
-    userIDObj[userId] = dm
+function getReminders(date){
+  var future = new Date(date);
+  var miliSeconds1 = future.getTime();
+  var now = new Date();
+  var miliSeconds2 = now.getTime();
+  var diff = future - now;
+  var reminder1;
+  var reminder24;
+  if(diff <= 86400000){
+    reminder24 = (future - 3600000)/1000;
+  }else if(diff <= 172800000){
+    reminder24 = (future - 3600000)/1000;
+    reminder1 = (future - 86400000)/1000;
   }
+  return [reminder24, reminder1];
 }
+
+// function buildDM(idArr) {
+//   for (var i=0; i < idArr.length; i++) {
+//     var dm = idArr[i].id;
+//     var userId = idArr[i].user;
+//     userIDObj[userId] = dm
+//   }
+// }
 
 
 rtm.start();

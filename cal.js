@@ -38,14 +38,6 @@ const CLIENT_SECRET = 'UFB_e08W8doSnrtXlEV1_0VI'
 app.post('/slack/actions', (req, res) =>{
   //res.status(200).end() // best practice to respond with 200 status
   var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
-  var message = {
-      "text": actionJSONPayload.user.name+" clicked: "+actionJSONPayload.actions[0].name,
-      "replace_original": false
-  }
-
-  var attachments = {
-  as_user: true,
-  };
 
   var payload = req.body.payload;
   payload = JSON.parse(payload);
@@ -215,6 +207,7 @@ function createMeeting(data){
     endTime = [parseInt(arr[0])+1, arr[1], arr[2]].join(':');
     endDate = data.date;
   }
+
 
   // Make event
   var event = {
