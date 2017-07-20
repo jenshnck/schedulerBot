@@ -25,17 +25,16 @@ app.post('/slack/actions', (req, res) =>{
   var payload = interpretPayload(req);
   // Create new oauth2Client
   var oauth2Client = new OAuth2(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET,
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
     'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
   );
 
-
   // Search database for tokens corresponding to the given slackId
   Token.findOne({slackId: payload.slackId}, function(err, token){
-    console.log('I AM HERE I AM HERE I AM HERE I AM HERE ');
     if(err || !token){
       console.log('Could not find token with slackId ' + payload.slackId);
+      console.log('Proceeding with authentication');
       // if you can't find the token for the slackId, they need to
       // authenticate their calendar
       var url = oauth2Client.generateAuthUrl({
@@ -47,10 +46,11 @@ app.post('/slack/actions', (req, res) =>{
         state: payload.slackId
       });
       // respond with the link that the user clicks that leads to authentication
-      res.send(url)
+      res.send('Looks like your calendar is not registered yet. Register here: ' + url)
     } else {
       // otherwise, just set the credentials to the token we already found
       // and let the user know that they are already authenticated
+      console.log('Calendar already authenticated!');
       oauth2Client.setCredentials(token.tokens);
 
       slackRequest(oauth2Client, payload);
@@ -92,12 +92,14 @@ app.get('/oauthcallback', function(req, res) {
           email: email
         });
 
+        console.log('Saving to db: ' + tkn);
+
         // save the new token obejct to mongo
         tkn.save(function(err, token){
           if(err){
             console.log('Error saving new token');
           } else {
-            console.log('successfully saved new user!');
+            console.log('successfully saved new user! You can now make requests');
           }
         })
       }
