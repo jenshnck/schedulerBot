@@ -12,6 +12,11 @@ var OAuth2 = google.auth.OAuth2;
 var calendar = google.calendar('v3');
 var plus = google.plus('v1');
 
+// defult endpoint for heroku
+app.get('/', (req, res) => {
+  res.send('Hello World');
+})
+
 // Incoming route for all slack messages
 app.post('/slack/actions', (req, res) =>{
   //res.status(200).end() // best practice to respond with 200 status
