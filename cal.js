@@ -41,7 +41,7 @@ app.post('/slack/actions', (req, res) =>{
         access_type: 'online',
         scope: [
           'https://www.googleapis.com/auth/calendar',
-          'https://www.googleapis.com/auth/plus.profile.emails.read'
+          'https://www.googleapis.com/auth/plus.me'
         ],
         state: payload.slackId
       });
@@ -80,10 +80,9 @@ app.get('/oauthcallback', function(req, res) {
           userId: 'me',
           auth: oauth2Client,
           }, function (err, response) {
-            // var user = JSON.parse(response)
             console.log('The Response');
             console.log(response);
-            email = user.value;
+            email = response.emails[0].value;
           });
 
         // create a new token object with the slackId and the auth tokens
