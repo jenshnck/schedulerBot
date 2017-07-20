@@ -15,14 +15,6 @@ var plus = google.plus('v1');
 // Incoming route for all slack messages
 app.post('/slack/actions', (req, res) => {
   var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
-  var message = {
-      "text": actionJSONPayload.user.name+" clicked: "+actionJSONPayload.actions[0].name,
-      "replace_original": false
-  }
-
-  var attachments = {
-  as_user: true,
-  };
 
   var payload = req.body.payload;
   payload = JSON.parse(payload);
@@ -158,6 +150,7 @@ function createMeeting(data){
     endDate = data.date;
   }
 
+<<<<<<< HEAD
   var attendeeEmails = []
   data.people.forEach((slackId) => {
     Token.find({slackId: slackId }, function(err, user) {
@@ -169,6 +162,9 @@ function createMeeting(data){
      }
     })
   })
+=======
+
+>>>>>>> master
   // Make event
   var event = {
     'summary': data.purpose,
