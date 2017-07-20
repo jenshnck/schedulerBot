@@ -12,9 +12,6 @@ var web = new WebClient(bot_token);
 
 var dateFormat = require('dateformat');
 
-console.log('@slack/client', require('@slack/client'));
-
-
 var rtm = new RtmClient(bot_token);
 
 var route;

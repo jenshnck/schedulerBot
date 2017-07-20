@@ -1,27 +1,16 @@
-(function setup() {
-  var mongoose = require('mongoose');
-  var {Token} = require('./models.js')
-  var express = require('express');
-  var app = express();
+var mongoose = require('mongoose');
+var {Token} = require('./models.js')
+var express = require('express');
+var app = express();
 
-  var bodyParser = require('body-parser');
-  app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(bodyParser.json());
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-  var google = require('googleapis');
-  var OAuth2 = google.auth.OAuth2;
-  var calendar = google.calendar('v3');
-  var plus = google.plus('v1');
-
-  var WebClient = require('@slack/client').WebClient;
-  var bot_token = process.env.SLACK_BOT_TOKEN;
-  var web = new WebClient(bot_token);
-
-  mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot', 
-  function() {
-    console.log('Connected to Mongo');
-  })
-}())
+var google = require('googleapis');
+var OAuth2 = google.auth.OAuth2;
+var calendar = google.calendar('v3');
+var plus = google.plus('v1');
 
 // Incoming route for all slack messages
 app.post('/slack/actions', (req, res) => {
@@ -50,6 +39,7 @@ app.post('/slack/actions', (req, res) => {
     process.env.CLIENT_SECRET,
     'http://localhost:'+process.env.PORT+'/oauthcallback'
   );
+
   Token.findOne({slackId: payload.slackId}, function(err, token){
     if(err || !token){
       console.log('Could not find token with slackId ' + payload.slackId);
@@ -70,7 +60,7 @@ app.post('/slack/actions', (req, res) => {
       oauth2Client.setCredentials(token.tokens);
 
       slackRequest(oauth2Client, payload);
-      res.send('already authenticated! You\'re good to go')
+      res.send('Already authenticated! You\'re good to go')
     }
   })
 })
