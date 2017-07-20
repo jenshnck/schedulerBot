@@ -26,7 +26,7 @@ app.post('/slack/actions', (req, res) =>{
   var oauth2Client = new OAuth2(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
-    'http://localhost:'+process.env.PORT+'/oauthcallback'
+    'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
   );
 
   // Search database for tokens corresponding to the given slackId
@@ -64,7 +64,7 @@ app.get('/oauthcallback', function(req, res) {
     var oauth2Client = new OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      'http://localhost:'+process.env.PORT+'/oauthcallback'
+      'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
     );
 
     oauth2Client.getToken(req.query.code, function (err, tokens) {
