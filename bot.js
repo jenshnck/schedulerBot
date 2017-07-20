@@ -48,7 +48,7 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 });
 //receives user message
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
-  console.log(response);
+  // console.log(response);
   if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6A14BYH2') return;
   var user = response.user;
   var apiAI = new Promise(function(resolve, reject) {
@@ -58,7 +58,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
     });
 //log response
     request.on('response', function(response) {
-      console.log(response.result);
+      // console.log(response.result);
       // userInfo.date = response.result.parameters.date;
       // userInfo['given-name'] = response.result.parameters['given-name'];
       // userInfo.meeting = response.result.parameters.meeting;
@@ -127,6 +127,21 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
             }
           });
 
+          web = new WebClient(process.env.SLACK_API_TOKEN);
+            var reminders = getReminders(response.parameters.date);
+            console.log(reminders);
+            for(var i = 0; i < reminders.length; i++){
+              if(reminders[i]){
+                web.reminders.add('Remember ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), reminders[i], function(err, res) {
+                  if (err) {
+                    console.log('Reminder Error:', err);
+                  } else {
+                    console.log('Message sent: ', res);
+                  }
+                });
+              }
+            }
+
           reset = true;
 
         }else{
@@ -136,7 +151,6 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         }
 
       }else if(response.parameters.meeting){
-        console.log('in meeeeeeeting')
         if(response.parameters.time && response.parameters.date){
           var people = response.parameters['given-name'];
           var realNames = [];
@@ -275,7 +289,8 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
           });
 
           web = new WebClient(process.env.SLACK_API_TOKEN);
-            var reminders = getReminders(response.date);
+            var reminders = getReminders(response.parameters.date);
+            console.log(reminders);
             for(var i = 0; i < reminders.length; i++){
               if(reminders[i]){
                 web.reminders.add('Remember ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), reminders[i], function(err, res) {
@@ -289,13 +304,13 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
             }
             reset = true;
         }else{
-          console.log('hiiiiiiiiiiiiiiiiii');
-          console.log(response.fulfillment.speech);
           rtm.sendMessage(response.fulfillment.speech, route);
 
           reset = false;
         }
 
+      }else{
+        reset = true;
       }
   }).catch(function(err) {
     console.log('ERROR IN APIAI', err)
@@ -314,12 +329,12 @@ function getReminders(date){
   var miliSeconds1 = future.getTime();
   var now = new Date();
   var miliSeconds2 = now.getTime();
-  var diff = future - now;
+  var diff = miliSeconds1 - miliSeconds2;
   var reminder1;
   var reminder24;
   if(diff <= 86400000){
     reminder24 = (future - 3600000)/1000;
-  }else if(diff <= 172800000){
+  }else{
     reminder24 = (future - 3600000)/1000;
     reminder1 = (future - 86400000)/1000;
   }

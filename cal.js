@@ -143,16 +143,7 @@ function slackRequest(googleClient, data) {
 
 function createMeeting(data){
   // calculate end dateTime
-  var arr = data.time.split(':');
-  var endTime, endDate;
-  if (parseInt(arr[0]) === 23) {
-    endTime = ['00', arr[1], arr[2]].join(':');
-    var arr2 = data.date.split('-');
-    endDate = [arr2[0], arr2[1], parseInt(arr2[2])+1].join('-');
-  } else {
-    endTime = [parseInt(arr[0])+1, arr[1], arr[2]].join(':');
-    endDate = data.date;
-  }
+  var endData = calcEndTime(data);
 
   var attendeeEmails = []
   data.people.forEach((slackId) => {
@@ -165,6 +156,7 @@ function createMeeting(data){
      }
     })
   })
+
   // Make event
   var event = {
     'summary': data.purpose,
@@ -173,11 +165,16 @@ function createMeeting(data){
       'timeZone': 'America/Los_Angeles'
     },
     'end': {
-      'dateTime': endDate + 'T' + endTime,
+      'dateTime': endData.endDate + 'T' + endData.endTime,
       'timeZone': 'America/Los_Angeles'
     },
     'attendees': attendeeEmails,
   };
+
+  // deal with scheduling conflicts
+  //TODO: change this as necessary
+  event = manageConflicts(event);
+
   return event;
 }
 
@@ -194,6 +191,29 @@ function createReminder(data) {
   return event;
 }
 
+function manageConflicts(event){
+  /*
+  Get every invitees' calendar
+  find the common free times (free busy)
+    for every invitees calendar, send a freebusy query.
+      If any of them is false, return
+      If all are true, add the time to the list of possible events
+  If one of those free times is the requested time,
+    return an event with the requested time
+  else {
+    kep going (while until there are, say, 10 options)
+  }
+  */
+
+  event.attendees.forEach((attendee) => {
+    calendar.Freebusy.query({
+      
+    })
+  })
+
+  return event;
+}
+
 function interpretPayload(req){
   var actionJSONPayload = JSON.parse(req) // parse URL-encoded payload JSON string
   var payload = req.body.payload;
@@ -203,6 +223,20 @@ function interpretPayload(req){
   payload = JSON.parse(payload);
   payload = Object.assign(payload, {slackId: slackId});
   return payload;
+}
+
+function calcEndTime(data){
+  var arr = data.time.split(':');
+  var endTime, endDate;
+  if (parseInt(arr[0]) === 23) {
+    endTime = ['00', arr[1], arr[2]].join(':');
+    var arr2 = data.date.split('-');
+    endDate = [arr2[0], arr2[1], parseInt(arr2[2])+1].join('-');
+  } else {
+    endTime = [parseInt(arr[0])+1, arr[1], arr[2]].join(':');
+    endDate = data.date;
+  }
+  return {endTime: endTime, endDate: endDate}
 }
 
 app.listen(process.env.PORT, function(){
