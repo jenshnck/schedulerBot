@@ -92,7 +92,7 @@ app.get('/oauthcallback', function(req, res) {
         // save the new token obejct to mongo
         tkn.save(function(err, token){
           if(err){
-            console.log('Error saving new token', err);
+            console.log('Error saving new token');
           } else {
             console.log('successfully saved new user!');
           }
@@ -124,7 +124,7 @@ function slackRequest(googleClient, data) {
     resource: event
   }, function(err, event) {
     if (err) {
-      console.log('There was an error contacting the Calendar service: ' + err);
+      console.log('There was an error contacting the Calendar service: ');
       return;
     }
     console.log('Event created: %s', event.htmlLink);
@@ -207,7 +207,7 @@ function manageConflicts(event){
 
   event.attendees.forEach((attendee) => {
     calendar.Freebusy.query({
-      
+
     })
   })
 

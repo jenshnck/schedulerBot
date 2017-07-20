@@ -14,8 +14,6 @@ var dateFormat = require('dateformat');
 
 var stringSimilarity = require('string-similarity');
 
-console.log('@slack/client', require('@slack/client'));
-
 
 var rtm = new RtmClient(bot_token);
 
@@ -37,7 +35,6 @@ var reset = true;
 
 //authentication for bot
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
-  console.log('rtmStartData', rtmStartData);
   for(var i = 0; i < rtmStartData.users.length; i++){
     users.push(rtmStartData.users[i]);
   }
@@ -48,7 +45,6 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
 });
 //receives user message
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
-  // console.log(response);
   if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6A14BYH2') return;
   var user = response.user;
   var apiAI = new Promise(function(resolve, reject) {
@@ -123,18 +119,18 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
             if (err) {
               console.log('Error 105:', err);
             } else {
-              console.log('Message sent: ', res);
+              console.log('Message sent: ');
             }
           });
 
           web = new WebClient(process.env.SLACK_API_TOKEN);
             var reminders = getReminders(response.parameters.date);
-            console.log(reminders);
+            //console.log(reminders);
             for(var i = 0; i < reminders.length; i++){
               if(reminders[i]){
                 web.reminders.add('Remember ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), reminders[i], function(err, res) {
                   if (err) {
-                    console.log('Reminder Error:', err);
+                    console.log('Reminder Error:');
                   } else {
                     console.log('Message sent: ', res);
                   }
@@ -175,8 +171,6 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
                 }
               }
             }
-
-            console.log('lmaooooooooooooooooooo', matchedSlackId);
 
           var attachments = {
             as_user: true,
@@ -224,7 +218,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
             if (err) {
               console.log('Error: 184', err);
             } else {
-              console.log('Message sent: ', res);
+              //console.log('Message sent: ', res);
             }
           });
 
@@ -284,20 +278,20 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
             if (err) {
               console.log('Error: 244', err);
             } else {
-              console.log('Message sent: ', res);
+              //console.log('Message sent: ', res);
             }
           });
 
           web = new WebClient(process.env.SLACK_API_TOKEN);
             var reminders = getReminders(response.parameters.date);
-            console.log(reminders);
+            //console.log(reminders);
             for(var i = 0; i < reminders.length; i++){
               if(reminders[i]){
                 web.reminders.add('Remember ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), reminders[i], function(err, res) {
                   if (err) {
                     console.log('Reminder Error:', err);
                   } else {
-                    console.log('Message sent: ', res);
+                    //console.log('Message sent: ', res);
                   }
                 });
               }
