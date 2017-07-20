@@ -12,6 +12,8 @@ var OAuth2 = google.auth.OAuth2;
 var calendar = google.calendar('v3');
 var plus = google.plus('v1');
 
+mongoose.connect('mongodb://Prateek:123@ds163672.mlab.com:63672/scheduler-bot');
+
 // defult endpoint for heroku
 app.get('/', (req, res) => {
   res.send('Hello World');
