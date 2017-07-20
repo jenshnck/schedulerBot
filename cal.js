@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 app.post('/slack/actions', (req, res) =>{
   //res.status(200).end() // best practice to respond with 200 status
   var payload = interpretPayload(req);
-
+  console.log('RECEIVED THE ACTION FROM THE BOT AND NOW IN CALENDAR ');
   // Create new oauth2Client
   var oauth2Client = new OAuth2(
     process.env.CLIENT_ID,
@@ -215,7 +215,6 @@ function manageConflicts(event){
 }
 
 function interpretPayload(req){
-  var actionJSONPayload = JSON.parse(req) // parse URL-encoded payload JSON string
   var payload = req.body.payload;
   payload = JSON.parse(payload);
   var slackId = payload.user.id;
