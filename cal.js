@@ -41,7 +41,7 @@ app.post('/slack/actions', (req, res) =>{
         access_type: 'online',
         scope: [
           'https://www.googleapis.com/auth/calendar',
-          'https://www.googleapis.com/auth/plus.me'
+          'https://www.googleapis.com/auth/plus.profile.emails.read'
         ],
         state: payload.slackId
       });
@@ -79,9 +79,10 @@ app.get('/oauthcallback', function(req, res) {
         plus.people.get({
           userId: 'me',
           auth: oauth2Client,
-          fields: emails
           }, function (err, response) {
             var user = JSON.parse(response)
+            console.log('The Response');
+            console.log(response);
             email = user.value;
           });
 
