@@ -21,7 +21,6 @@ app.get('/', (req, res) => {
 app.post('/slack/actions', (req, res) =>{
   //res.status(200).end() // best practice to respond with 200 status
   var payload = interpretPayload(req);
-  console.log('RECEIVED THE ACTION FROM THE BOT AND NOW IN CALENDAR ');
   // Create new oauth2Client
   var oauth2Client = new OAuth2(
     process.env.CLIENT_ID,
@@ -29,8 +28,10 @@ app.post('/slack/actions', (req, res) =>{
     'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
   );
 
+
   // Search database for tokens corresponding to the given slackId
   Token.findOne({slackId: payload.slackId}, function(err, token){
+    console.log('I AM HERE I AM HERE I AM HERE I AM HERE ');
     if(err || !token){
       console.log('Could not find token with slackId ' + payload.slackId);
       // if you can't find the token for the slackId, they need to
