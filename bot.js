@@ -16,12 +16,24 @@ var stringSimilarity = require('string-similarity');
 
 console.log('@slack/client', require('@slack/client'));
 
+
 var rtm = new RtmClient(bot_token);
 
 var route;
 var userIDObj = {};
 
 var users = [];
+
+// var userInfo = {
+//   date: '',
+//  'given-name': [],
+//   meeting: '',
+//   purpose: '',
+//   reminder: '',
+//   time: ''
+// }
+
+var reset = true;
 
 //authentication for bot
 rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
@@ -30,24 +42,30 @@ rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED,  (rtmStartData) => {
     users.push(rtmStartData.users[i]);
   }
   for (const c of rtmStartData.channels) {
-    // console.log('cccccccccccccccc', c);
     if (c.is_member && c.name ==='test') { route = c.id }
   }
   console.log(`Logged in as ${rtmStartData.self.name} of team ${rtmStartData.team.name}, but not yet connected to a channel`);
 });
 //receives user message
 rtm.on(RTM_EVENTS.MESSAGE, function(response) {
-  if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6BA113U6') return;
+  console.log(response);
+  if (response.type !== 'message' || response.user === 'U6A3AAM5K' || response.bot_id === 'B6A14BYH2') return;
   var user = response.user;
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
       sessionId: '123456789',
-
+      resetContexts: reset
     });
 //log response
     request.on('response', function(response) {
       console.log(response.result);
-      resolve(response.result.parameters)
+      // userInfo.date = response.result.parameters.date;
+      // userInfo['given-name'] = response.result.parameters['given-name'];
+      // userInfo.meeting = response.result.parameters.meeting;
+      // userInfo.purpose = response.result.parameters.purpose;
+      // userInfo.reminder = response.result.parameters.reminder;
+      // userInfo.time = response.result.parameters.time;
+      resolve(response.result);
     });
 
     request.on('error', function(error) {
@@ -59,215 +77,229 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   })
 //parae api response and send interactive message to user
   apiAI.then(function(response) {
-    if(response.reminder){
-      var attachments = {
-        as_user: true,
-        attachments: [
-          {
-            "fallback": "You are unable to complete the request",
-            "callback_id": "wopr_game",
-            "color": "#3AA3E3",
-            "attachment_type": "default",
-            "actions": [
+      if(response.parameters.reminder){
+        if(response.parameters.purpose && response.parameters.date){
+          var attachments = {
+            username: 'schedulerBot',
+            as_user: true,
+            attachments: [
               {
-                "name": "confirm",
-                "text": "Confirm",
-                "style": "success",
-                "type": "button",
-                "value": JSON.stringify({
-                  "reminder": response.reminder,
-                  "purpose": response.purpose,
-                  "date": response.date,
-                }),
-              },
-              {
-                "name": "cancel",
-                "text": "Cancel",
-                "style": "danger",
-                "type": "button",
-                "value": "war",
-                "confirm": {
-                  "title": "Are you sure?",
-                  "text": "Wouldn't you prefer a good game of chess?",
-                  "ok_text": "Yes",
-                  "dismiss_text": "No"
-                }
-              },
+                "fallback": "You are unable to complete the request",
+                "callback_id": "wopr_game",
+                "color": "#3AA3E3",
+                "attachment_type": "default",
+                "actions": [
+                  {
+                    "name": "confirm",
+                    "text": "Confirm",
+                    "style": "success",
+                    "type": "button",
+                    "value": JSON.stringify({
+                      "reminder": response.parameters.reminder,
+                      "purpose": response.parameters.purpose,
+                      "date": response.parameters.date,
+                    }),
+                  },
+                  {
+                    "name": "cancel",
+                    "text": "Cancel",
+                    "style": "danger",
+                    "type": "button",
+                    "value": "war",
+                    "confirm": {
+                      "title": "Are you sure?",
+                      "text": "Wouldn't you prefer a good game of chess?",
+                      "ok_text": "Yes",
+                      "dismiss_text": "No"
+                    }
+                  },
 
+                ]
+              }
             ]
-          }
-        ]
-      };
+          };
 
-      web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
-        if (err) {
-          console.log('Error:', err);
-        } else {
-          console.log('Message sent: ', res);
+          web.chat.postMessage(route, 'Creat a task ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), attachments, function(err, res) {
+            if (err) {
+              console.log('Error 105:', err);
+            } else {
+              console.log('Message sent: ', res);
+            }
+          });
+
+          reset = true;
+
+        }else{
+          rtm.sendMessage(response.fulfillment.speech, route);
+
+          reset = false;
         }
-      });
 
-      return null
-
-    }else{
-      var people = response['given-name'];
-      var realNames = [];
-      var matchedNames = [];
-      var matchedSlackId = [];
-      for(var i = 0; i < users.length; i++){
-        if(users[i].real_name){
-          realNames.push(users[i].real_name);
-        }
-      }
-
-      for(var i = 0; i < people.length; i++){
-        console.log('hiiiiiiiiiii', people[i], realNames)
-          var matched = stringSimilarity.findBestMatch(people[i], realNames).bestMatch.target;
-          matchedNames.push(matched);
-      }
-
-        for(var j = 0; j < matchedNames.length; j++){
+      }else if(response.parameters.meeting){
+        console.log('in meeeeeeeting')
+        if(response.parameters.time && response.parameters.date){
+          var people = response.parameters['given-name'];
+          var realNames = [];
+          var matchedNames = [];
+          var matchedSlackId = [];
           for(var i = 0; i < users.length; i++){
-            if(users[i].real_name === matchedNames[j]){
-              matchedSlackId.push(users[i].id);
+            if(users[i].real_name){
+              realNames.push(users[i].real_name);
             }
           }
-        }
 
-        console.log('lmaooooooooooooooooooo', matchedSlackId);
-
-      var attachments = {
-        as_user: true,
-        attachments: [
-          {
-            "fallback": "You are unable to complete the request",
-            "callback_id": "wopr_game",
-            "color": "#3AA3E3",
-            "attachment_type": "default",
-            "actions": [
-              {
-                "name": "confirm",
-                "text": "Confirm",
-                "style": "success",
-                "type": "button",
-                "value": JSON.stringify({
-                  "people": matchedSlackId,
-                  "meeting": response.meeting,
-                  "purpose": response.purpose,
-                  "time": response.time,
-                  "date": response.date,
-                }),
-              },
-              {
-                "name": "cancel",
-                "text": "Cancel",
-                "style": "danger",
-                "type": "button",
-                "value": "war",
-                "confirm": {
-                  "title": "Are you sure?",
-                  "text": "Do you want to cancel the meeting?",
-                  "ok_text": "Yes",
-                  "dismiss_text": "No"
-                }
-              },
-            ]
+          for(var i = 0; i < people.length; i++){
+            console.log('hiiiiiiiiiii', people[i], realNames)
+              var matched = stringSimilarity.findBestMatch(people[i], realNames).bestMatch.target;
+              matchedNames.push(matched);
           }
-        ]
-      };
 
-     // For the time conflicts
-      web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
-        if (err) {
-          console.log('Error:', err);
-        } else {
-          console.log('Message sent: ', res);
-        }
-      });
+            for(var j = 0; j < matchedNames.length; j++){
+              for(var i = 0; i < users.length; i++){
+                if(users[i].real_name === matchedNames[j]){
+                  matchedSlackId.push(users[i].id);
+                }
+              }
+            }
 
-      var attachments1 = {
-        as_user: true,
-        "text": "Would you like to play a game?",
-        "response_type": "in_channel",
-        "attachments": [
-          {
-            "text": "Choose a game to play",
-            "fallback": "If you could read this message, you'd be choosing something fun to do right now.",
-            "color": "#3AA3E3",
-            "attachment_type": "default",
-            "callback_id": "game_selection",
-            "actions": [
+            console.log('lmaooooooooooooooooooo', matchedSlackId);
+
+          var attachments = {
+            as_user: true,
+            attachments: [
               {
-                "name": "games_list",
-                "text": "Pick a game...",
-                "type": "select",
-                "options": [
+                "fallback": "You are unable to complete the request",
+                "callback_id": "wopr_game",
+                "color": "#3AA3E3",
+                "attachment_type": "default",
+                "actions": [
                   {
-                    "text": "Hearts",
-                    "value": "hearts"
+                    "name": "confirm",
+                    "text": "Confirm",
+                    "style": "success",
+                    "type": "button",
+                    "value": JSON.stringify({
+                      "people": matchedSlackId,
+                      "meeting": response.parameters.meeting,
+                      "purpose": response.parameters.purpose,
+                      "time": response.parameters.time,
+                      "date": response.parameters.date,
+                    }),
                   },
                   {
-                    "text": "Bridge",
-                    "value": "bridge"
+                    "name": "cancel",
+                    "text": "Cancel",
+                    "style": "danger",
+                    "type": "button",
+                    "value": "war",
+                    "confirm": {
+                      "title": "Are you sure?",
+                      "text": "Do you want to cancel the meeting?",
+                      "ok_text": "Yes",
+                      "dismiss_text": "No"
+                    }
                   },
+                ]
+              }
+            ]
+          };
+
+
+
+          web.chat.postMessage(route, 'Creat a task ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), attachments, function(err, res) {
+            if (err) {
+              console.log('Error: 184', err);
+            } else {
+              console.log('Message sent: ', res);
+            }
+          });
+
+          var attachments1 = {
+            as_user: true,
+            "text": "Would you like to play a game?",
+            "response_type": "in_channel",
+            "attachments": [
+              {
+                "text": "Choose a game to play",
+                "fallback": "If you could read this message, you'd be choosing something fun to do right now.",
+                "color": "#3AA3E3",
+                "attachment_type": "default",
+                "callback_id": "game_selection",
+                "actions": [
                   {
-                    "text": "Checkers",
-                    "value": "checkers"
-                  },
-                  {
-                    "text": "Chess",
-                    "value": "chess"
-                  },
-                  {
-                    "text": "Poker",
-                    "value": "poker"
-                  },
-                  {
-                    "text": "Falken's Maze",
-                    "value": "maze"
-                  },
-                  {
-                    "text": "Global Thermonuclear War",
-                    "value": "war"
+                    "name": "games_list",
+                    "text": "Pick a game...",
+                    "type": "select",
+                    "options": [
+                      {
+                        "text": "Hearts",
+                        "value": "hearts"
+                      },
+                      {
+                        "text": "Bridge",
+                        "value": "bridge"
+                      },
+                      {
+                        "text": "Checkers",
+                        "value": "checkers"
+                      },
+                      {
+                        "text": "Chess",
+                        "value": "chess"
+                      },
+                      {
+                        "text": "Poker",
+                        "value": "poker"
+                      },
+                      {
+                        "text": "Falken's Maze",
+                        "value": "maze"
+                      },
+                      {
+                        "text": "Global Thermonuclear War",
+                        "value": "war"
+                      }
+                    ]
                   }
                 ]
               }
             ]
           }
-        ]
-      }
 
-      web.chat.postMessage(route, "Unfortunately, that time won't work. Here are some available times.", attachments1, function(err, res) {
-        if (err) {
-          console.log('Error:', err);
-        } else {
-          console.log('Message sent: ', res);
-        }
-      });
+          web.chat.postMessage(route, "Unfortunately, that time won't work. Here are some available times.", attachments1, function(err, res) {
+            if (err) {
+              console.log('Error: 244', err);
+            } else {
+              console.log('Message sent: ', res);
+            }
+          });
 
-      web = new WebClient(process.env.SLACK_API_TOKEN);
-        var reminders = getReminders(response.date);
-        for(var i = 0; i < reminders.length; i++){
-          if(reminders[i]){
-            web.reminders.add('Remember ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), reminders[i], function(err, res) {
-              if (err) {
-                console.log('Reminder Error:', err);
-              } else {
-                console.log('Message sent: ', res);
+          web = new WebClient(process.env.SLACK_API_TOKEN);
+            var reminders = getReminders(response.date);
+            for(var i = 0; i < reminders.length; i++){
+              if(reminders[i]){
+                web.reminders.add('Remember ' + response.parameters.purpose + ' on ' + dateFormat(response.parameters.date, "fullDate"), reminders[i], function(err, res) {
+                  if (err) {
+                    console.log('Reminder Error:', err);
+                  } else {
+                    console.log('Message sent: ', res);
+                  }
+                });
               }
-            });
-          }
+            }
+            reset = true;
+        }else{
+          console.log('hiiiiiiiiiiiiiiiiii');
+          console.log(response.fulfillment.speech);
+          rtm.sendMessage(response.fulfillment.speech, route);
+
+          reset = false;
         }
 
-      return null
-
-    }
+      }
   }).catch(function(err) {
     console.log('ERROR IN APIAI', err)
   })
-    .catch(function(err) {
-      console.log('ERROR IN APIAI', err)
-    })
 
 
 });
@@ -301,5 +333,6 @@ function getReminders(date){
 //     userIDObj[userId] = dm
 //   }
 // }
+
 
 rtm.start();
