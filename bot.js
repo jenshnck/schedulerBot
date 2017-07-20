@@ -42,7 +42,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   var apiAI = new Promise(function(resolve, reject) {
     var request = app.textRequest(response.text, {
       sessionId: '123456789',
-      resetContexts: true
+
     });
 //log response
     request.on('response', function(response) {
@@ -116,7 +116,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
       var matchedSlackId = [];
       for(var i = 0; i < users.length; i++){
         if(users[i].real_name){
-          realNames.push(users[i].real_name);  
+          realNames.push(users[i].real_name);
         }
       }
 
@@ -176,7 +176,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         ]
       };
 
-     // For the time conflicts  
+     // For the time conflicts
       web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
           console.log('Error:', err);
