@@ -80,7 +80,7 @@ app.get('/oauthcallback', function(req, res) {
           userId: 'me',
           auth: oauth2Client,
           }, function (err, response) {
-            var user = JSON.parse(response)
+            // var user = JSON.parse(response)
             console.log('The Response');
             console.log(response);
             email = user.value;
