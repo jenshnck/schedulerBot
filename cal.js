@@ -37,34 +37,27 @@ const CLIENT_SECRET = 'UFB_e08W8doSnrtXlEV1_0VI'
 // Incoming route for all slack messages
 app.post('/slack/actions', (req, res) =>{
   //res.status(200).end() // best practice to respond with 200 status
-  var actionJSONPayload = JSON.parse(req.body.payload) // parse URL-encoded payload JSON string
+  var payload = interpretPayload(req);
 
-  var payload = req.body.payload;
-  payload = JSON.parse(payload);
-  var slackId = payload.user.id;
-  payload = payload.actions[0].value;
-  payload = JSON.parse(payload);
-
-  payload = Object.assign(payload, {slackId: slackId});
-  console.log('PAYLOAD');
-  console.log(payload);
-
+  // Create new oauth2Client
   var oauth2Client = new OAuth2(
     CLIENT_ID,
     CLIENT_SECRET,
     'http://localhost:'+PORT+'/oauthcallback'
   );
+
+  // Search database for tokens corresponding to the given slackId
   Token.findOne({slackId: payload.slackId}, function(err, token){
     if(err || !token){
       console.log('Could not find token with slackId ' + payload.slackId);
-      // if you cannot find the token in the database with the given
-      // slack Id, then you know they are a new user and can proceed
-      // with authentication
+      // if you can't find the token for the slackId, they need to
+      // authenticate their calendar
       var url = oauth2Client.generateAuthUrl({
         access_type: 'online',
         scope: 'https://www.googleapis.com/auth/calendar',
         state: payload.slackId
       });
+      // respond with the link that the user clicks that leads to authentication
       res.send(url)
     } else {
       // otherwise, just set the credentials to the token we already found
@@ -93,36 +86,6 @@ app.post('/slack/actions', (req, res) =>{
   // }
 
 })
-
-// app.get('/test', function(req, res){
-//   var payload = JSON.parse('{"slackId":"1","people":["Otto","Maria"],"meeting":"meeting","purpose":"discuss potatos","time":"23:45:00","date":"2017-07-21"}');
-//   console.log(payload.meeting);
-//   var oauth2Client = new OAuth2(
-//     CLIENT_ID,
-//     CLIENT_SECRET,
-//     'http://localhost:3000/oauthcallback'
-//   );
-//   Token.findOne({slackId: payload.slackId}, function(err, token){
-//     if(err || !token){
-//       // if you cannot find the token in the database with the given
-//       // slack Id, then you know they are a new user and can proceed
-//       // with authentication
-//       var url = oauth2Client.generateAuthUrl({
-//         access_type: 'offline',
-//         prompt: 'consent',
-//         scope: 'https://www.googleapis.com/auth/calendar',
-//         state: payload.slackId
-//       });
-//       res.redirect(url)
-//     } else {
-//       // otherwise, just set the credentials to the token we already found
-//       // and let the user know that they are already authenticated
-//       oauth2Client.setCredentials(token.tokens);
-//       slackRequest(oauth2Client, payload);
-//       res.send('already authenticated! You\'re good to go')
-//     }
-//   })
-// })
 
 // This runs when the user accepts or denies access to their
 // google calendar.
@@ -160,7 +123,11 @@ app.get('/oauthcallback', function(req, res){
   }
 })
 
-// This is
+// -----------------------------------------------------------------------------
+// ----------------------------End of Routes------------------------------------
+// -----------------------------------------------------------------------------
+
+// All incoming messages from slack come here
 function slackRequest(googleClient, data) {
   var event = null;
   if(data.meeting){
@@ -186,6 +153,7 @@ function slackRequest(googleClient, data) {
 }
 
 /*
+  Example of 'data' parameter
   {
     "people":["Otto","Maria"],
     "purpose":"discuss potatos",
@@ -193,8 +161,6 @@ function slackRequest(googleClient, data) {
     "date":"2017-07-21"
   }
 */
-
-
 function createMeeting(data){
   // calculate end dateTime
   var arr = data.time.split(':');
@@ -237,6 +203,17 @@ function createReminder(data){
     'attendees': data.people,
   };
   return event;
+}
+
+function interpretPayload(req){
+  var actionJSONPayload = JSON.parse(req) // parse URL-encoded payload JSON string
+  var payload = req.body.payload;
+  payload = JSON.parse(payload);
+  var slackId = payload.user.id;
+  payload = payload.actions[0].value;
+  payload = JSON.parse(payload);
+  payload = Object.assign(payload, {slackId: slackId});
+  return payload;
 }
 
 app.listen(PORT, function(){
