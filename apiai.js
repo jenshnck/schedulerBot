@@ -41,7 +41,8 @@ request2.on('error', function(error) {
     console.log(error);
 });
 
-request2.end();})
+request2.end();
+})
 
 // axios({
 //   method:'get',

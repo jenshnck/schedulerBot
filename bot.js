@@ -16,7 +16,6 @@ var stringSimilarity = require('string-similarity');
 
 console.log('@slack/client', require('@slack/client'));
 
-
 var rtm = new RtmClient(bot_token);
 
 var route;
@@ -100,7 +99,7 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         ]
       };
 
-      web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+      web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
           console.log('Error:', err);
         } else {
@@ -177,9 +176,8 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
         ]
       };
 
-
-
-      web.chat.postMessage(route, 'Creat a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
+     // For the time conflicts  
+      web.chat.postMessage(route, 'Create a task ' + response.purpose + ' on ' + dateFormat(response.date, "fullDate"), attachments, function(err, res) {
         if (err) {
           console.log('Error:', err);
         } else {
@@ -267,6 +265,9 @@ rtm.on(RTM_EVENTS.MESSAGE, function(response) {
   }).catch(function(err) {
     console.log('ERROR IN APIAI', err)
   })
+    .catch(function(err) {
+      console.log('ERROR IN APIAI', err)
+    })
 
 
 });
@@ -300,6 +301,5 @@ function getReminders(date){
 //     userIDObj[userId] = dm
 //   }
 // }
-
 
 rtm.start();
