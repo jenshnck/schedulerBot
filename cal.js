@@ -80,25 +80,30 @@ app.get('/oauthcallback', function(req, res) {
           userId: 'me',
           auth: oauth2Client,
           }, function (err, response) {
+            console.log('The Response');
+            console.log(response);
             email = response.emails[0].value;
+          }
+        )
+        .then(() => {
+          // create a new token object with the slackId and the auth tokens
+          var tkn = new Token({
+            slackId: req.query.state,
+            tokens: tokens,
+            email: email
           });
 
-        // create a new token object with the slackId and the auth tokens
-        var tkn = new Token({
-          slackId: req.query.state,
-          tokens: tokens,
-          email: email
-        });
+          console.log('Saving to db: ' + tkn);
 
-        console.log('Saving to db: ' + tkn);
-
-        // save the new token obejct to mongo
-        tkn.save(function(err, token){
-          if(err){
-            console.log('Error saving new token');
-          } else {
-            console.log('successfully saved new user! You can now make requests');
-          }
+          // save the new token obejct to mongo
+          tkn.save(function(err, token){
+            if(err){
+              console.log('Error saving new token');
+            } else {
+              console.log('successfully saved new user! You can now make requests');
+            }
+          })
+          res.send('Send in a request now')
         })
       }
     })
