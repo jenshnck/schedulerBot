@@ -73,7 +73,7 @@ app.get('/oauthcallback', function(req, res) {
     oauth2Client.getToken(req.query.code, function (err, tokens) {
       if (!err) {
         // set the current credentials to the person who just authenticated
-        oauth2Client.setCredentials(users);
+        oauth2Client.setCredentials(tokens);
         var email = ''
         // get the user's Google account address
         var temp = new Promise(function(resolve, reject) {
