@@ -76,16 +76,23 @@ app.get('/oauthcallback', function(req, res) {
         oauth2Client.setCredentials(tokens);
         var email = ''
         // get the user's Google account address
-        plus.people.get({
-          userId: 'me',
-          auth: oauth2Client,
-          }, function (err, response) {
-            console.log('The Response');
-            console.log(response);
-            email = response.emails[0].value;
-          }
-        )
-        .then(() => {
+        var temp = new Promise(function(resolve, reject) {
+          plus.people.get({
+            userId: 'me',
+            auth: oauth2Client,
+            }, function (err, response) {
+              if (err) {
+                reject(err);
+                return;
+              }
+              console.log('The Response');
+              console.log(response);
+              resolve(response.emails[0].value);
+            }
+          )
+        };
+
+        temp.then((email) => {
           // create a new token object with the slackId and the auth tokens
           var tkn = new Token({
             slackId: req.query.state,
@@ -104,6 +111,9 @@ app.get('/oauthcallback', function(req, res) {
             }
           })
           res.send('Send in a request now')
+        })
+        .catch(function (e) {
+          console.log(e);
         })
       }
     })
