@@ -70,7 +70,7 @@ app.get('/oauthcallback', function(req, res) {
       'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
     );
 
-    oauth2Client.getToken(req.query.code, function (err, users) {
+    oauth2Client.getToken(req.query.code, function (err, tokens) {
       if (!err) {
         // set the current credentials to the person who just authenticated
         oauth2Client.setCredentials(users);
