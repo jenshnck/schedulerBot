@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var {Token} = require('./models.js')
+var {User} = require('./models.js')
 var express = require('express');
 var app = express();
 
@@ -30,12 +30,12 @@ app.post('/slack/actions', (req, res) =>{
     'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
   );
 
-  // Search database for tokens corresponding to the given slackId
-  Token.findOne({slackId: payload.slackId}, function(err, token){
-    if(err || !token){
-      console.log('Could not find token with slackId ' + payload.slackId);
+  // Search database for Users corresponding to the given slackId
+  User.findOne({slackId: payload.slackId}, function(err, user){
+    if(err || !user){
+      console.log('Could not find user with slackId ' + payload.slackId);
       console.log('Proceeding with authentication');
-      // if you can't find the token for the slackId, they need to
+      // if you can't find the user for the slackId, they need to
       // authenticate their calendar
       var url = oauth2Client.generateAuthUrl({
         access_type: 'online',
@@ -48,10 +48,10 @@ app.post('/slack/actions', (req, res) =>{
       // respond with the link that the user clicks that leads to authentication
       res.send('Looks like your calendar is not registered yet. Register here: ' + url)
     } else {
-      // otherwise, just set the credentials to the token we already found
+      // otherwise, just set the credentials to the user we already found
       // and let the user know that they are already authenticated
       console.log('Calendar already authenticated!');
-      oauth2Client.setCredentials(token.tokens);
+      oauth2Client.setCredentials(user.tokens);
 
       slackRequest(oauth2Client, payload);
       res.send('Already authenticated! You\'re good to go')
@@ -70,10 +70,10 @@ app.get('/oauthcallback', function(req, res) {
       'https://scheduler-bot-84184.herokuapp.com'+'/oauthcallback'
     );
 
-    oauth2Client.getToken(req.query.code, function (err, tokens) {
+    oauth2Client.getUser(req.query.code, function (err, users) {
       if (!err) {
         // set the current credentials to the person who just authenticated
-        oauth2Client.setCredentials(tokens);
+        oauth2Client.setCredentials(users);
         var email = ''
         // get the user's Google account address
         var temp = new Promise(function(resolve, reject) {
@@ -93,19 +93,19 @@ app.get('/oauthcallback', function(req, res) {
         });
 
         temp.then((email) => {
-          // create a new token object with the slackId and the auth tokens
-          var tkn = new Token({
+          // create a new user object with the slackId and the auth users
+          var usr = new User({
             slackId: req.query.state,
             tokens: tokens,
             email: email
           });
 
-          console.log('Saving to db: ' + tkn);
+          console.log('Saving to db: ' + usr);
 
-          // save the new token obejct to mongo
-          tkn.save(function(err, token){
+          // save the new user obejct to mongo
+          usr.save(function(err, user){
             if(err){
-              console.log('Error saving new token');
+              console.log('Error saving new user');
             } else {
               console.log('successfully saved new user! You can now make requests');
             }
@@ -165,7 +165,7 @@ function createMeeting(data){
 
   var attendeeEmails = []
   data.people.forEach((slackId) => {
-    Token.find({slackId: slackId }, function(err, user) {
+    User.find({slackId: slackId }, function(err, user) {
      if (err) {
        console.log('Error! No user found with this email address.')
        return;
