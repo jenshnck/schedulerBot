@@ -90,7 +90,7 @@ app.get('/oauthcallback', function(req, res) {
               resolve(response.emails[0].value);
             }
           )
-        };
+        });
 
         temp.then((email) => {
           // create a new token object with the slackId and the auth tokens
